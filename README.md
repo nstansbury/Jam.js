@@ -15,11 +15,14 @@ It is designed so that unlike other AMD/Module loading mechanisms, no changes to
 
 
 A 'module' is just simply defined as a single file, that by convention has a .jsm extension. Any number of 'modules' can be imported into the same Namespace.  This allows large namespaces to split code out into more traditional class files if required.
+
+A module can itself import other Namespaces or Modules. When importing dependant namespaces or modules, Jam takes care of the asynchronicity, so that callbacks aren't required in module level code.
+
 ```javascript
 // module1.jsm
 "use strict";
 
-// I can import any number of other dependant Namespaces or Modules in a module too
+// I can asynchronously import any number of other dependant Namespaces or Modules in a module too - and without requiring a callback
 Jam.import("My.Other.Namespace");
 
 // Anything I don't export is private to the Module
@@ -46,9 +49,9 @@ function init(){
 this.init();
 
 ```
+By default, every namespace has a default module, named as the namespace with a .jsm extension. This allows a single namespace module to transparently import any required modules.
 
-
-Modules and Namespaces can be hacked around as needed, such as importing random JS files into useful namespaces as well as importing one Module into multiple Namespaces to share private data between them.
+Modules and Namespaces can also be hacked around as needed, such as importing random JS files into useful namespaces as well as importing one Module into multiple Namespaces to share private data between them.
 
 ```javascript
 var mod = new Jam.Module("myModule.jsm");

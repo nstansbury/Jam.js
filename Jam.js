@@ -1,148 +1,299 @@
 "use strict";
+/** @description A JavaScript Asynchronous Module loader */
+/** @author Neil Stansbury <neil@neilstansbury.com> */
+/** @version 1.0 */
+
+document.addEventListener("DOMContentLoaded", function(){Jam.onready();}, false);
 
 /** @namespace */
 var Jam = {
+	/** @type Integer */
+	version : 1.0,
+	
 	/** @private */
 	_global : this,
 	
-	/** @type Object */
-	Modules : {},
+	/** @private */
+	__namespaces : {},
 	
-	/** @type Object */
-	Namespaces : {},
+	/** @private */
+	__modules : {},
 	
-	/** @type Array */
-	callStack : [],
+	/** @private */
+	__scripts : {},
 	
+	/** @param {Number} asyncCount */
+	/** @param {Function} callback */
+	/** @returns {Function} */
+	/** @constructor */
+	/** @private */
+	__getAsyncHandler : function(asyncCount, callback)	{
+		var count = 0;
+		return function handler(script)	{
+			count++;
+			if(count == asyncCount)	{
+				if(callback)	{
+					setTimeout(callback, 0);
+				}
+			}
+		}
+	},
+	
+	/** @type {String} */
+	defaultPath : "",
+	
+	/** @returns {String} */
+	getBaseUrl : function()	{
+		// We should check for <head><base/></head> element
+		var fileparts = window.location.href.split("/");
+		fileparts.pop();
+		return fileparts.join("/") +"/";
+	},
+	
+	/** @param {String} url */
+	/** @returns {Boolean} */
+	hasModule : function(url){
+		return this.__modules[url] != undefined ? true : false;
+	},
+	
+	/** @param {String} url */
+	/** @returns {Jam.Module} */
+	getModule : function(url){
+		return this.__modules[url] || null;
+	},
+	
+	/** @param {String} url */
+	/** @returns {Jam.Module} */
+	addModule : function(url){
+		var Mod = new Jam.Module(url);
+		this.__modules[url] = Mod;
+		return Mod;
+	},
+	
+	/** @param {String} namespace */
+	/** @returns {Boolean} */
+	hasNamespace : function(namespace){
+		return this.__namespaces[namespace] != undefined ? true : false;
+	},
+	
+	/** @param {String} namespace */
+	/** @returns {Jam.Namespace} */
+	getNamespace : function(namespace){
+		return this.__namespaces[namespace] || null;
+	},
+	
+	/** @param {String} namespace */
+	/** @returns {Jam.Namespace} */
+	addNamespace : function(namespace){
+		var Ns = new Jam.Namespace(namespace);
+		this.__namespaces[namespace] = Ns;
+		return Ns;
+	},
+	dropNamespace : function(){throw "Not Yet Implemented";},
+	
+	/** @param {String} url */
+	/** @returns {Boolean} */
+	hasScript : function(url){
+		return this.__scripts[url] != undefined ? true : false;
+	},
+	
+	/** @param {String} url */
+	/** @returns {Jam.Script} */
+	getScript : function(url)	{
+		return this.__scripts[url] || null;
+	},
+	
+	/** @param {String} url */
+	/** @returns {Jam.Script} */
+	addScript : function(url)	{
+		var script = new Jam.Script(url);
+		var head = document.getElementsByTagName("head")[0];
+		head.appendChild(script.getElement());
+		this.__scripts[url] = script;
+		return script;
+	},
+	
+	/** @returns {Void} */
+	onready : function(){},
+	
+	/** @description Import the specified modules asynchrously into the Namespace. */
 	/** @param {String|String[]} namespace */
 	/** @param {String|String[]} [module] */
-	/** @param {Function} [callback] */
+	/** @param {Function} [onImportHandler] */
 	/** @returns {Void} */
-	import : function(namespace, module, callback){
+	import : function(namespace, module, onImportHandler){
+		console.log("Jam.import() :: "+namespace);
+		
 		if(Array.isArray(namespace)){
-			if(typeof module != "undefined" || "function"){		// Oh for multiple function signatures!
+			if(typeof module !== "undefined" || "function"){		// Oh for multiple function signatures!
 				throw "Modules cannot be specified with multiple Namespaces";
 			}
-			callback = module;
+			onImportHandler = module;
 		}
-		else if(Array.isArray(module)){	// 
+		else if(Array.isArray(module)){ 
 			if(namespace == undefined){
 				throw "Namespace must be specified to import Modules into";
 			}
 		}
 		else if(typeof module != "string"){
-			callback = module;
-			module = namespace +".js";
+			onImportHandler = module;	// Module is optional param
+			module = namespace +Jam.Module.defaultExtn;
 		}
 		
-		if(callback){
-			Jam.callStack.push(callback);
+		if(Jam.hasNamespace(namespace)){
+			var ns = Jam.getNamespace(namespace);
+		}
+		else {
+			var ns = Jam.addNamespace(namespace);
 		}
 		
-		function onloaded(module){
-			var last = Jam.callStack[Jam.callStack.length -1];
-			if(last.namespace == namespace){
-				import_module();
+		if(Jam.hasModule(module)){
+			var mod = Jam.getModule(module);
+			if(ns.hasModule(mod) && onImportHandler){
+				onImportHandler();
+				return;
 			}
 		}
+		else {
+			var mod = Jam.addModule(module);
+		}
 		
-		function import_module(){
-			var length = Jam.callStack.length;
-			if(length > 0){
-				var last = Jam.callStack[length -1];
-				if(typeof last == "function"){
-					last();
-					Jam.callStack.pop();
-				}
-				else if(last.module.isLoaded()){
-					var ns = Jam.Namespaces[last.namespace];
-					if(ns.import(last.module) == 0x1){
-						Jam.callStack.pop();
-						import_module();
-					}
+		ns.import(mod, onImportHandler);
+	},
+	
+	/** @description This function allows us to use the static '__proto__' declaration (or just 'proto' in ES3) declaration for inheritance on Opera & IE
+	/** @param {Object} base */
+	/** @returns {Void} */
+	extend : function(base)	{
+		if(Object.__proto__ != undefined)	{
+			return;	
+		}
+		function prototypeObject(superClass, subClass)	{
+			for(var key in superClass)	{
+				if(subClass[ key ] == undefined)	{	// Has subClass overwritten superClass
+					subClass[ key ] = superClass[ key ];
 				}
 			}
 		}
-		/*
-			Jam.hasNamespace();
-			Jam.getNamespace();
-			Jam.importNamespace();
-			Jam.dropNamespace();
-			Jam.hasModule();
-			Jam.loadModule();
-		*/
+		for(var name in base)	{
+			var object = base[ name ];
+			if(typeof(object) == "function" && object.prototype != undefined && object.prototype.__proto__ != undefined)		{	// Constructor.prototype.__proto__
+				console.log("Prototyping Object: " +name);
+				prototypeObject(object.prototype.__proto__, object.prototype);
+			}
+			else if(typeof(object) == "object" && object.__proto__ != undefined)		{		// Object.__proto__
+				console.log("Prototyping Object: " +name);
+				prototypeObject(object.__proto__, object);
+			}
+		}
+	},
+	
+	/** @description Load the specified scripts asynchrously without executing them */
+	/** @param {Array|String} filename */
+	/** @param {String} [basepath] */
+	/** @param {Function} [onLoadListener] */
+	/** @returns {Void} */
+	load : function(filename, basepath, onLoadListener)	{
+		if(typeof(filename) == "string")	{
+			filename = [filename];
+		}
+		if(typeof(basepath) == "function")	{
+			onLoadListener = basepath;
+			basepath = undefined;
+		}
+		if(basepath == undefined)	{
+			basepath = this.getBaseUrl();
+		}
 		
-		if(Jam.Namespaces[namespace] == undefined ){
-			Jam.Namespaces[namespace] = new Jam.Namespace(namespace);
-			module = new Jam.Module(module);
+		var loadCount = filename.length;
+		var handler = Jam.__getAsyncHandler(loadCount, onLoadListener);
+		
+		for(var i = 0; i < loadCount; i++)	{
+			if(this.hasScript(url)){
+				var script = this.getScript(url);
+			}
+			else {
+				var script = this.addScript(url);
+			}
+			if(script.getReadyState() < Jam.ReadyState.LOADING){
+				script.load(handler);
+			}
+		}
+	},
+	
+	/** @description Execute the specified scripts in the order specified */
+	/** @param {Array|String} filename */
+	/** @param {String} [basepath] */
+	/** @param {Function} [onExecListener] */
+	/** @param {Function} [onExecError] */
+	/** @returns {Void} */
+	exec : function(filename, basepath, onExecListener, onExecError)	{
+		if(typeof(basepath) == "function")	{		// Basepath has not been specified
+			if(typeof(onExecListener) == "function")	{
+				onExecError = onExecListener;
+			}
+			onExecListener = basepath;
+			basepath = null;
+		}
+		
+		if(typeof(filename) == "string")	{
+			var fileparts = filename.split("/");
+			if(fileparts.length > 1)	{
+				filename = [fileparts[fileparts.length -1]];
+				fileparts.pop();
+				var path  = fileparts.join("/") +"/";
+				var re = new RegExp( Jam.getBaseUrl(), "gim");	// Ensure a partial path doesn't duplicate a basepath
+				path = path.replace(re, "");
+				if(path.indexOf("http") == 0){
+					basepath = path;
+				}
+				else {
+					basepath = (basepath == null) ? this.getBaseUrl() + path : basepath + path;
+				}
+				
+			}
+			else {
+				filename = [filename];
+				if(basepath == undefined)	{
+					basepath = this.getBaseUrl();
+				}
+			}
+		}
+		else {
+			basepath = (basepath == null) ? "" : basepath;
+		}
+		
+		var loadCount = filename.length;
+		var handler = Jam.__getAsyncHandler(loadCount, onExecListener);
+		
+		for(var i = 0; i < loadCount; i++)	{
+			var script = Jam.getScript(basepath +filename[i]);
+			if(script)	{
+				if(script.getReadyState() > Jam.ReadyState.EMPTY)	{
+					continue;
+				}
+			}
+			else {
+				script = Jam.addScript(basepath +filename[i]);	
+			}
+			try {
+				script.exec(handler);
+			}
+			catch(e)	{
+				if(onExecError)		{
+					onExecError(script, e);
+				}
+			}
 			
-			var loader = {
-				namespace : namespace,
-				module : module
-			}
-			this.callStack.push(loader);
-			module.load(onloaded);
 		}
-	}
-}
-
-Jam.Loader = function(){
+	},
 	
-}
-
-
-/** @constructor */
-/** @param {String} url */
-Jam.Module = function(url){
-	this.__url = url;
-	this.__isloaded = false;
-}
-Jam.Module.prototype = {
-	/** @private */
-	__src : "",
-	
+	/** @description Combine all the modules and dependancies into a single file */
+	/** @param {Array|String} modules */
 	/** @returns {String} */
-	getUrl : function(){
-		return this.__url
-	},
-	
-	/** @returns {Boolean} */
-	isLoaded : function(){
-		return this.__isloaded;
-	},
-	
-	/** @param {Function} onloaded */
-	/** @returns {Void} */
-	load : function(onloaded){
-		var module = this;
-		var httpRequest = new XMLHttpRequest();
-		httpRequest.open("get", this.getUrl(), true);
-		httpRequest.onreadystatechange = function() {
-			if (httpRequest.readyState === 4){
-				console.log("# Module Loaded :: " +module.getUrl());
-				module.__src = httpRequest.responseText;
-				module.__isloaded = true;
-				onloaded(module);
-			}
-		}
-		httpRequest.send();
-	},
-	
-	/** @param {Object} context */
-	/** @param {String[]} [symbols] */
-	/** @returns {Void} */
-	export : function(context, symbols){
-		var export_module = this.__src +'\nfunction export_symbols(){\
-					for(var i = 0; i < EXPORTED_SYMBOLS.length; i++){\
-						var symbol = EXPORTED_SYMBOLS[ i ];\
-						context[ symbol ] = eval(symbol);\
-					}\
-				};\
-				export_symbols();'
-		var f = new Function("context", export_module);
-		f.call(context, context);
-	}
+	build : function(modules){throw "Not Yet Implemented";}
 }
+
 
 /** @constructor */
 /** @param {String} namespace */
@@ -172,6 +323,7 @@ Jam.Namespace.prototype = {
 				}
 				context = context[ name ];
 			}
+			context.__name__ = this.getName();	// Ala Python Modules
 			this.__context = context;
 		}
 		return this.__context;
@@ -184,18 +336,320 @@ Jam.Namespace.prototype = {
 	},
 	
 	/** @param {Jam.Module} module */
+	/** @param {Function} handler */
 	/** @returns {Integer} */
-	import : function(module){
-		console.log("# Importing Module into Namespace :: "+this.getName());
-		try {
-			module.export(this.getContext());
+	import : function(module, handler){
+		console.log("Namespace.import() :: "+this.getName());
+		
+		var ns = this
+		function onReady(){
+			ns.__modules[module.getUrl()] = module;
+			callback();
 		}
-		catch(e){
-			// NB. We could throw on dependant Jam.import() calls but it means we have to load synchronously to allow for multiple imports() 
-			//console.log("# Module Import Failed :: " +e);
-			return 0x0;
+		function callback(){
+			if(handler){
+				setTimeout(handler, 0);	// Because otherwise exceptions thrown look like module exceptions
+			}
 		}
-		console.log("# Module Imported");
-		return 0x1;
+		if(this.hasModule(module)){
+			callback();
+			return;
+		}
+		else {
+			module.onready = onReady;
+			module.export(this.getContext());	
+		}
 	}
 }
+
+
+/** @static */
+Jam.ReadyState = {
+	EMPTY : 0x0,
+	LOADING : 0x1,
+	STALLED : 0x2,
+	ERROR : 0x3,
+	LOADED : 0x4,	// Module code is loaded
+	PARSED : 0x5,	// Module is parsed
+	ENDED : 0x6,	// Module is exported
+	WAITING : 0x7,	// Waiting for dependancies
+	READY : 0x8		// Module dependancies are exported
+}
+
+/*	TBC
+	Jam.Module should listen to module for completion events
+	module should listen to Jam for READY event
+*/
+
+/** @constructor */
+/** @param {String} url */
+Jam.Module = function(url){
+	this.__url = url;
+}
+
+/** @private */
+/** @type {Jam.Module[]} */
+Jam.Module.stack = [];
+
+/** @type {String} */
+Jam.Module.defaultExtn = ".jsm";
+
+
+/** @param {Jam.Module} module */
+/** @param {Function} loadHandler */
+/** @returns {Void} */
+Jam.Module.exec = function(module, execHandler){
+	function exec(){
+		try {//debugger;
+			if(Jam.Module.isWaiting(module) == false){
+				var item = Jam.Module.getCurrent();
+				execHandler.call(module);
+				Jam.Module.stack.pop();					// Take this module of the stack
+				module.onready();
+				if(Jam.Module.stack.length > 0){
+					var next = Jam.Module.getCurrent();
+					Jam.Module.exec(next.module, next.handler);	
+				}
+			}
+		}
+		catch(e){
+			if(Jam.Module.isWaiting(module)){			// Are we waiting for dependancies after executing the handler?
+				module.__status = Jam.ReadyState.WAITING;
+				item.handler = execHandler;
+			}
+			else {
+				module.__status = Jam.ReadyState.ERROR;
+				Jam.Module.stack = [];					// We should do better than this
+				throw "Module Import Failed: " +module.getUrl() +"\n\t" +e;
+			}
+		}
+	}
+	setTimeout(exec, 0);
+}
+
+/** @param {Jam.Module} module */
+/** @returns {Void} */
+Jam.Module.isWaiting = function(module){
+	return Jam.Module.stack[Jam.Module.stack.length -1].module == module ? false : true;
+}
+
+/** @returns {Object} */
+Jam.Module.getCurrent = function(){
+	return Jam.Module.stack[Jam.Module.stack.length -1];
+}
+
+/** @param {Jam.Module} module */
+/** @returns {Void} */
+Jam.Module.add = function(module, handler){
+	var item = {
+		module : module,
+		handler : handler
+	}
+	Jam.Module.stack.push(item);
+}
+
+Jam.Module.prototype = {
+	/** @private */
+	__export : function(){},
+	
+	/** @private */
+	/** @type {Jam.ReadyState} */
+	__status : Jam.ReadyState.EMPTY,
+	
+	/** @returns {String} */
+	getUrl : function(){
+		return this.__url
+	},
+	
+	/** @returns {Jam.ReadyState} */
+	getReadyState : function(){
+		return this.__status;
+	},
+	
+	/** @param {Jam.Module} module */
+	/** @param {Function} loadHandler */
+	/** @returns {Void} */
+	load : function(loadHandler){
+		Jam.Module.add(this);
+		
+		var module = this;
+		var httpRequest = new XMLHttpRequest();
+		httpRequest.open("get", module.getUrl(), true);
+		httpRequest.onreadystatechange = function() {
+			switch(httpRequest.readyState){
+				case 2:
+					module.__status = Jam.ReadyState.LOADING;
+					break;
+				case 3:
+					module.__status = Jam.ReadyState.STALLED;		// Need a timeout check here
+					break;
+				case 4:
+					if(httpRequest.status != 200){
+						module.__status = Jam.ReadyState.ERROR;
+					}
+					else if(httpRequest.responseText == ""){
+						module.__status = Jam.ReadyState.EMPTY;
+					}
+					else {
+						module.__status = Jam.ReadyState.LOADED;
+						loadHandler.call(module, httpRequest.responseText);
+					}
+					break;
+			}
+		}
+		httpRequest.send();
+	},
+
+	import : function(src){
+		var source = src +'\n\
+				function export_symbols(){\
+					if(symbols == undefined && (typeof EXPORTED_SYMBOLS === "undefined" || Array.isArray(EXPORTED_SYMBOLS) == false)){\
+						throw "Nothing to Export from Module - No symbols declared";\
+					}\
+					else {\
+						symbols = symbols || EXPORTED_SYMBOLS;\
+					}\
+					for(var i = 0; i < symbols.length; i++){\
+						var symbol = symbols[ i ];;\
+						context[symbol] = eval(symbol);\
+						Jam.extend(context[symbol]);\
+					}\
+				};\
+				export_symbols();'
+		try {
+			console.log("Module.import() :: " +this.getUrl());
+			this.exec = new Function("context", "symbols", source);
+			this.__status = Jam.ReadyState.PARSED;
+		}
+		catch(e){	// Error in the module code
+			console.log("# Module Import Failed: " +e);
+			this.__status = Jam.ReadyState.ERROR;
+			throw e;
+		}
+	},
+	
+	/** @param {Object} context */
+	/** @param {String[]} [symbols] */
+	/** @returns {Void} */
+	export : function(context, symbols){
+		
+		function onLoadHandler(data){
+			if(this.getReadyState() == Jam.ReadyState.LOADED){
+				console.log("Module.load()ed :: " +this.getUrl());
+				this.import(data);
+				var module = this;
+				setTimeout(function(){
+					module.export(context, symbols);	
+				}, 0);
+			}
+		}
+		
+		function onExecHandler(){
+			if(this.getReadyState() >= Jam.ReadyState.PARSED){
+				console.log("Module.exec() :: " +this.getUrl());
+				this.exec.call(context, context, symbols);
+				this.__status = Jam.ReadyState.READY;
+			}
+		}
+		
+		if(context == null || typeof context != "object"){
+			throw "Invalid context specified for Module export";
+		}
+		if(symbols != null && (Array.isArray(symbols) == false || symbols.length == 0)){
+			throw "Invalid symbols specified for Module export";
+		}
+		
+		if(this.getReadyState() < Jam.ReadyState.LOADING){	
+			this.load(onLoadHandler);
+		}
+		else if(this.getReadyState() >= Jam.ReadyState.PARSED){
+			Jam.Module.exec(this, onExecHandler);
+		}
+	},
+	
+	/** @returns {Void} */
+	onready : function(){}
+}
+
+
+/** @param {String} url */
+/** @param {String} [type] */
+/** @constructor */
+Jam.Script = function(url, type)	{
+	this.__url = url;
+	this.__size = -1;
+	this.__status = Jam.ReadyState.EMPTY;
+	this.__script = document.createElement("script");
+	this.__script.type = type || "text/javascript";
+}
+Jam.Script.prototype = {
+	//__head : document.getElementsByTagName("head")[0],
+	
+	/** @returns {String} */
+	getElement : function()	{
+		return this.__script;
+	},
+	
+	/** @returns {String} */
+	getPath : function()	{
+		var delim = this.__url.lastIndexOf("/");
+		return this.__url.slice(0, delim);
+	},
+	
+	/** @returns {String} */
+	getUrl : function(){
+		return this.__url;
+	},
+	
+	/** @returns {String} */
+	getName : function(){
+		var delim = this.__url.lastIndexOf("/");
+		return this.__url.slice(delim+1);
+	},
+	
+	/** @returns {Number} */
+	getSize : function(){
+		return this.__size;
+	},
+	
+	/** @returns {Jam.ReadyState} */
+	getReadyState : function(){
+		return this.__status;
+	},
+	
+	/** @param {Function} [onLoadHandler] */
+	/** @returns {Void} */
+	load : function(onLoadHandler){
+		
+		//var script = this;
+		//script.__isLoaded = true;
+	},
+	
+	/** @param {Function} [onExecHandler] */
+	/** @returns {Void} */
+	exec : function(onExecHandler){
+		var script = this;
+		function onload()	{
+			script.__status = Jam.ReadyState.READY;
+			if(onExecHandler){
+				setTimeout(function(){
+					onExecHandler(script);
+				}, 0);
+			}
+		}
+		var elem = this.getElement();
+		if(elem.addEventListener){
+			elem.addEventListener("load", onload, false);
+		}
+		else if(elem.readyState){
+			elem.onreadystatechange = function(){
+				if(this.readyState == "complete" || this.readyState == "loaded"){
+					onload();
+				}
+			};
+		}
+		this.__status = Jam.ReadyState.LOADING;
+		elem.src = this.getUrl();
+	}
+}
+
