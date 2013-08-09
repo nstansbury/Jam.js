@@ -2,41 +2,20 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-1.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:cal="http://www.w3.org/2002/12/cal/ical#" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ma="http://www.w3.org/ns/ma-ont#" xml:lang="en">
 	<head>
-		<title>Jam.Js</title>
+		<title>Jam.Js Development Scenarios</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<link rel="stylesheet" type="text/css" href="https://raw.github.com/nstansbury/Scenario.js/master/scenario.css" />
 		<script type="text/javascript" src="../jam.js"></script>
 		<script type="text/javascript">
-			function callback()	{
-				console.log(X.Y.Z.getName());
-				//console.log(X);
+			Jam.onready = function(){
+				
+				Jam.exec("https://raw.github.com/nstansbury/Scenario.js/master/scenario.js", callback);
 			}
-			Jam.defaultPath = "tests/";
-			//Jam.Exec("X.Y.Z.js", callback);
 			
-			//Jam.defaultPath = "file://d:/dev/jet/tests/";
-			//Jam.Exec("ditto/X.Y.Z.js", callback);
-			
-			//Jam.Exec("X.Y.Z.js", "file:///d:/dev/jet/tests/ditto/", callback);
-			
-			Jam.Exec("resource://d:/dev/jet/tests/ditto/X.Y.Z.js", callback);
-
-			/*
-			Jam.Load(["file1.js", "file2.js", "file3.js"], basepath, onLoadListener);
-			
-			var script = Jam.getScript(basepath, name);
-			script.import("Itv.Media");
-			
-			Jam.Exec(["file1.js", "file2.js", "file3.js"], basepath, onExecListener);
-			
-			Jam.Import("Itv.Media", basepath, onImportListener);
-			// Assumes filename called basepath + namespace.js
-			
-			Jam.defaultPath = "js";
-			
-			Jam.Import("Itv.Media");
-			*/
-			
-			
+			function callback(namespace){
+				SCENARIO.Reporter = new SCENARIO.HTMLReporter();
+				SCENARIO.run("scenarios.js");	
+			}
 		</script>
 	</head>
 	<body style="background-color: grey;">
