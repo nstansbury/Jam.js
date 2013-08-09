@@ -121,9 +121,7 @@ var Jam = {
 	/** @param {String|String[]} [module] */
 	/** @param {Function} [onImportHandler] */
 	/** @returns {Void} */
-	import : function(namespace, module, onImportHandler){
-		console.log("Jam.import() :: "+namespace);
-		
+	import : function(namespace, module, onImportHandler){		
 		if(Array.isArray(namespace)){
 			if(typeof module !== "undefined" || "function"){		// Oh for multiple function signatures!
 				throw "Modules cannot be specified with multiple Namespaces";
@@ -178,11 +176,11 @@ var Jam = {
 		for(var name in base)	{
 			var object = base[ name ];
 			if(typeof(object) == "function" && object.prototype != undefined && object.prototype.__proto__ != undefined)		{	// Constructor.prototype.__proto__
-				console.log("Prototyping Object: " +name);
+				console.log("Jam :: Prototyping Object: " +name);
 				prototypeObject(object.prototype.__proto__, object.prototype);
 			}
 			else if(typeof(object) == "object" && object.__proto__ != undefined)		{		// Object.__proto__
-				console.log("Prototyping Object: " +name);
+				console.log("Jam :: Prototyping Object: " +name);
 				prototypeObject(object.__proto__, object);
 			}
 		}
@@ -244,7 +242,7 @@ var Jam = {
 				var path  = fileparts.join("/") +"/";
 				var re = new RegExp( Jam.getBaseUrl(), "gim");	// Ensure a partial path doesn't duplicate a basepath
 				path = path.replace(re, "");
-				if(path.indexOf("http") == 0){
+				if(path.indexOf("//") != -1){
 					basepath = path;
 				}
 				else {
@@ -339,10 +337,9 @@ Jam.Namespace.prototype = {
 	/** @param {Function} handler */
 	/** @returns {Integer} */
 	import : function(module, handler){
-		console.log("Namespace.import() :: "+this.getName());
-		
 		var ns = this
 		function onReady(){
+			console.log("Jam :: Namespace Imported: "+ns.getName());
 			ns.__modules[module.getUrl()] = module;
 			callback();
 		}
@@ -400,11 +397,11 @@ Jam.Module.defaultExtn = ".jsm";
 /** @returns {Void} */
 Jam.Module.exec = function(module, execHandler){
 	function exec(){
-		try {//debugger;
+		try {
 			if(Jam.Module.isWaiting(module) == false){
 				var item = Jam.Module.getCurrent();
 				execHandler.call(module);
-				Jam.Module.stack.pop();					// Take this module of the stack
+				Jam.Module.stack.pop();					// Take this module off the stack
 				module.onready();
 				if(Jam.Module.stack.length > 0){
 					var next = Jam.Module.getCurrent();
@@ -420,7 +417,8 @@ Jam.Module.exec = function(module, execHandler){
 			else {
 				module.__status = Jam.ReadyState.ERROR;
 				Jam.Module.stack = [];					// We should do better than this
-				throw "Module Import Failed: " +module.getUrl() +"\n\t" +e;
+				console.log("Jam :: Module Import Failed: " +module.getUrl());
+				throw(e);
 			}
 		}
 	}
@@ -491,6 +489,7 @@ Jam.Module.prototype = {
 						module.__status = Jam.ReadyState.EMPTY;
 					}
 					else {
+						console.log("Jam :: Module Loaded: " +module.getUrl());
 						module.__status = Jam.ReadyState.LOADED;
 						loadHandler.call(module, httpRequest.responseText);
 					}
@@ -517,12 +516,12 @@ Jam.Module.prototype = {
 				};\
 				export_symbols();'
 		try {
-			console.log("Module.import() :: " +this.getUrl());
+			console.log("Jam :: Module Imported: " +this.getUrl());
 			this.exec = new Function("context", "symbols", source);
 			this.__status = Jam.ReadyState.PARSED;
 		}
 		catch(e){	// Error in the module code
-			console.log("# Module Import Failed: " +e);
+			console.log("Jam :: Module Import Failed: " +this.getUrl());
 			this.__status = Jam.ReadyState.ERROR;
 			throw e;
 		}
@@ -535,7 +534,6 @@ Jam.Module.prototype = {
 		
 		function onLoadHandler(data){
 			if(this.getReadyState() == Jam.ReadyState.LOADED){
-				console.log("Module.load()ed :: " +this.getUrl());
 				this.import(data);
 				var module = this;
 				setTimeout(function(){
@@ -546,17 +544,17 @@ Jam.Module.prototype = {
 		
 		function onExecHandler(){
 			if(this.getReadyState() >= Jam.ReadyState.PARSED){
-				console.log("Module.exec() :: " +this.getUrl());
 				this.exec.call(context, context, symbols);
+				console.log("Jam :: Module Executed: " +this.getUrl());
 				this.__status = Jam.ReadyState.READY;
 			}
 		}
 		
 		if(context == null || typeof context != "object"){
-			throw "Invalid context specified for Module export";
+			throw "Jam :: Invalid context specified for Module export";
 		}
 		if(symbols != null && (Array.isArray(symbols) == false || symbols.length == 0)){
-			throw "Invalid symbols specified for Module export";
+			throw "Jam :: Invalid symbols specified for Module export";
 		}
 		
 		if(this.getReadyState() < Jam.ReadyState.LOADING){	
