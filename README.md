@@ -45,11 +45,11 @@ var Thing2 = {
 function init(){
 	// I'm not an exported symbol so remain private to the module, though I can be
 	// called by public methods that are exported.
-	// Notice how I don't need to be wrapped inside strange closures or anonymous functions to achieve my
-	// privacy.  I look just like any other function.
+	// Notice how I don't need to be wrapped inside strange closures or anonymous
+	// functions to achieve my privacy.  I look just like any other function.
 }
 ```
-By default, Jam.import() assumes every namespace has a default module, of the namespace name with a .jsm extension. This allows a single namespace module to transparently import any required modules.
+By default, Jam.import() assumes every namespace has a default module, of the namespace name with a .jsm extension. This allows a single namespace module to transparently import any required modules, without the caller being required to know in advance and specifiy the modules the Namespace depends on.
 
 Modules and Namespaces can also be hacked around as needed, such as importing random JS files into useful namespaces as well as importing one Module into multiple Namespaces to share private data between them.
 
