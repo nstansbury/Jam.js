@@ -7,6 +7,7 @@ A super light weight and easy to use Module and Namespace loader inspired by Moz
 ```javascript
 Jam.import("My.Qualified.Namespace");
 ```
+Or..
 ```javascript
 Jam.import("My.Qualified.Namespace", ["module1.jsm", "module2.jsm", "module3.jsm"], callback);
 ```
@@ -20,13 +21,14 @@ A module can itself import other Namespaces or Modules. When importing dependant
 // module1.jsm
 "use strict";
 
-// I can asynchronously import any number of other dependant Namespaces or Modules in a module too - and without requiring a callback
+// I can asynchronously import any number of other dependant Namespaces or Modules
+// in a module too - and without requiring a callback
 Jam.import("My.Other.Namespace");
 
 // Anything I don't export is private to the Module
 var EXPORTED_SYMBOLS = ["Thing1", "Thing2"];
 
-// I am 'Global' only in this module NOT in the Global JavaScript object
+// I am 'global' only in this module NOT in the Global JavaScript object
 function Thing1(){
 	init();		// We can call private/protected methods scoped to this module
 }
@@ -41,11 +43,13 @@ var Thing2 = {
 }
 
 function init(){
-	// I'm not an exported symbol so remain private to the module, though I can be called by public methods that are exported
-	// Notice how I don't need to be wrapped inside strange closures to achieve my privacy.  I look just like any other function.
+	// I'm not an exported symbol so remain private to the module, though I can be
+	// called by public methods that are exported.
+	// Notice how I don't need to be wrapped inside strange closures or anonymous functions to achieve my
+	// privacy.  I look just like any other function.
 }
 ```
-By default, every namespace has a default module, named as the namespace with a .jsm extension. This allows a single namespace module to transparently import any required modules.
+By default, Jam.import() assumes every namespace has a default module, of the namespace name with a .jsm extension. This allows a single namespace module to transparently import any required modules.
 
 Modules and Namespaces can also be hacked around as needed, such as importing random JS files into useful namespaces as well as importing one Module into multiple Namespaces to share private data between them.
 
@@ -67,17 +71,18 @@ mod.export(context, symbols);
 
 Jam also implements a few convienience functions designed to be used for ordinary scripts.
 
-Jam.exec() Loads and executes JavaScript files into the head tag of the document. They are executed in the order specified.
-```javascript
-Jam.exec("randomfile.js", basepath, callback);
-Jam.exec(["randomfile1.js", "randomfile2.js", "randomfile3.js"], callback);
-```
-
-Jam.exec() Loads JavaScript files into the head tag of the document but DOES NOT execute them. They are loaded in the order specified.
+Jam.exec() loads and executes JavaScript files into the head tag of the document. They are executed in the order specified.
 ```javascript
 Jam.exec("randomfile.js", basepath, callback);
 // Or
 Jam.exec(["randomfile1.js", "randomfile2.js", "randomfile3.js"], callback);
+```
+
+Jam.load() loads JavaScript files into browser cache. but DOES NOT execute them. They are loaded in the order specified.
+```javascript
+Jam.load("randomfile.js", basepath, callback);
+// Or
+Jam.load(["randomfile1.js", "randomfile2.js", "randomfile3.js"], callback);
 ```
 
 They can be executed on demand with:
@@ -86,7 +91,7 @@ var script = Jam.getScript("filepath.js");
 script.exec(handler);
 ```
 
-Lastly Jam implements an extend() method.  This is a simple shim designed to allow static inheritance declarations using __proto__, that are natively implemented by Mozilla & Webkit. module.export() automatically checks and extends exported module symbols, but it can also be called statically for use in IE and Opera on non-module objects:
+Lastly, Jam implements an extend() method.  This is a simple shim designed to allow static inheritance declarations using "__proto__", that are natively implemented by Mozilla & Webkit. module.export() automatically checks and extends exported module symbols, but it can also be called statically for use in IE and Opera on non-module objects:
 ```javascript
 var subclass = {
 	__proto__ : superclass
