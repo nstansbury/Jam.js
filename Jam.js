@@ -137,7 +137,7 @@ var Jam = {
 		}
 		else if(typeof module != "string"){
 			onImportHandler = module;	// Module is optional param
-			module = namespace +Jam.Module.defaultExtn;
+			module = this.defaultPath +namespace +Jam.Module.defaultExtn;
 		}
 		
 		if(Jam.hasNamespace(namespace)){
