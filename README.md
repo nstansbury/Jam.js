@@ -7,9 +7,9 @@ A super light weight and easy to use Module and Namespace loader inspired by Moz
 ```javascript
 Jam.import("My.Qualified.Namespace");
 ```
-Or..
+Or
 ```javascript
-Jam.import("My.Qualified.Namespace", ["module1.jsm", "module2.jsm", "module3.jsm"], callback);
+Jam.import("My.Qualified.Namespace", ["module1.jsm", "module2.jsm"], callback);
 ```
 It is designed so that unlike other AMD/Module loading mechanisms, no changes to your existing code or your coding style are required, and there is no need to wrap everything in closures, self executing functions or callbacks etc.
 
@@ -28,12 +28,15 @@ Jam.import("My.Other.Namespace");
 // Anything I don't export is private to the Module
 var EXPORTED_SYMBOLS = ["Thing1", "Thing2"];
 
-// I am 'global' only in this module NOT in the Global JavaScript object
+// I am only defined in this module scope NOT in the Global JavaScript scope
+// I can only be accessed directly in this module, otherwise my full Namespace must be used
 function Thing1(){
-	init();		// We can call private/protected methods scoped to this module
+	// I can call any public/private/protected methods scoped to this module
+	init();
 }
 Thing1.prototype = {
 	// I can depend on other import()ed Namespaces for inheritance patterns
+	// Jam.extend() automatically fixes __proto__ implementation for Opera & IE
 	__proto__ : My.Other.Namespace.Thing4			
 }
 
