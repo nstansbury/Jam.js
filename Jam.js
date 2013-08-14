@@ -339,9 +339,11 @@ Jam.Namespace.prototype = {
 	import : function(module, handler){
 		var ns = this
 		function onReady(){
-			console.log("Jam :: Namespace Imported: "+ns.getName());
-			ns.__modules[module.getUrl()] = module;
-			callback();
+			if(module.getReadyState() == Jam.ReadyState.READY){
+				console.log("Jam :: Namespace Imported: "+ns.getName());
+				ns.__modules[module.getUrl()] = module;
+				callback();	
+			}
 		}
 		function callback(){
 			if(handler){
@@ -393,7 +395,7 @@ Jam.Module.defaultExtn = ".jsm";
 
 
 /** @param {Jam.Module} module */
-/** @param {Function} loadHandler */
+/** @param {Function} execHandler */
 /** @returns {Void} */
 Jam.Module.exec = function(module, execHandler){
 	function exec(){
@@ -401,11 +403,17 @@ Jam.Module.exec = function(module, execHandler){
 			if(Jam.Module.isWaiting(module) == false){
 				var item = Jam.Module.getCurrent();
 				execHandler.call(module);
-				Jam.Module.stack.pop();					// Take this module off the stack
-				module.onready();
-				if(Jam.Module.stack.length > 0){
+				if(Jam.Module.isWaiting(module)){
+					module.__status = Jam.ReadyState.WAITING;
+					item.handler = execHandler;
+				}
+				else {
+					Jam.Module.stack.pop();					// Take this module off the stack
+					module.onready();
 					var next = Jam.Module.getCurrent();
-					Jam.Module.exec(next.module, next.handler);	
+					if(next){
+						Jam.Module.exec(next.module, next.handler);	
+					}
 				}
 			}
 		}
@@ -417,8 +425,7 @@ Jam.Module.exec = function(module, execHandler){
 			else {
 				module.__status = Jam.ReadyState.ERROR;
 				Jam.Module.stack = [];					// We should do better than this
-				console.log("Jam :: Module Import Failed: " +module.getUrl());
-				throw(e);
+				throw(module.getUrl() +": " +e.message);
 			}
 		}
 	}
@@ -428,12 +435,22 @@ Jam.Module.exec = function(module, execHandler){
 /** @param {Jam.Module} module */
 /** @returns {Void} */
 Jam.Module.isWaiting = function(module){
-	return Jam.Module.stack[Jam.Module.stack.length -1].module == module ? false : true;
+	if(Jam.Module.stack.length > 0){
+		return Jam.Module.stack[Jam.Module.stack.length -1].module == module ? false : true;	
+	}
+	else {
+		return false;
+	}
 }
 
 /** @returns {Object} */
 Jam.Module.getCurrent = function(){
-	return Jam.Module.stack[Jam.Module.stack.length -1];
+	if(Jam.Module.stack.length > 0){
+		return Jam.Module.stack[Jam.Module.stack.length -1];
+	}
+	else {
+		return null;	
+	}
 }
 
 /** @param {Jam.Module} module */
@@ -468,7 +485,7 @@ Jam.Module.prototype = {
 	/** @param {Function} loadHandler */
 	/** @returns {Void} */
 	load : function(loadHandler){
-		Jam.Module.add(this);
+		Jam.Module.add(this, null);
 		
 		var module = this;
 		var httpRequest = new XMLHttpRequest();
@@ -498,7 +515,9 @@ Jam.Module.prototype = {
 		}
 		httpRequest.send();
 	},
-
+	
+	/** @param {String} src */
+	/** @returns {Void} */
 	import : function(src){
 		var source = src +'\n\
 				function export_symbols(){\
