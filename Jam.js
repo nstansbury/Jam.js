@@ -505,7 +505,7 @@ Jam.Module.prototype = {
 						module.__status = Jam.ReadyState.EMPTY;
 					}
 					else {
-						console.log("Jam :: Module Loaded: " +module.getUrl());
+						//console.log("Jam :: Module Loaded: " +module.getUrl());
 						module.__status = Jam.ReadyState.LOADED;
 						loadHandler.call(module, httpRequest.responseText);
 					}
@@ -534,7 +534,7 @@ Jam.Module.prototype = {
 				};\
 				export_symbols();'
 		try {
-			console.log("Jam :: Module Imported: " +this.getUrl());
+			//console.log("Jam :: Module Imported: " +this.getUrl());
 			this.exec = new Function("context", "symbols", source);
 			this.__status = Jam.ReadyState.PARSED;
 		}
@@ -563,7 +563,7 @@ Jam.Module.prototype = {
 		function onExecHandler(){
 			if(this.getReadyState() >= Jam.ReadyState.PARSED){
 				this.exec.call(context, context, symbols);
-				console.log("Jam :: Module Executed: " +this.getUrl());
+				//console.log("Jam :: Module Executed: " +this.getUrl());
 				this.__status = Jam.ReadyState.READY;
 			}
 		}
