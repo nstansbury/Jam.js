@@ -22,23 +22,6 @@ var Jam = {
 	/** @private */
 	__scripts : {},
 	
-	/** @param {Number} asyncCount */
-	/** @param {Function} callback */
-	/** @returns {Function} */
-	/** @constructor */
-	/** @private */
-	__getAsyncHandler : function(asyncCount, callback)	{
-		var count = 0;
-		return function handler(script)	{
-			count++;
-			if(count == asyncCount)	{
-				if(callback)	{
-					setTimeout(callback, 0);
-				}
-			}
-		}
-	},
-	
 	/** @type {String} */
 	defaultPath : "",
 	
@@ -48,6 +31,22 @@ var Jam = {
 		var fileparts = window.location.href.split("/");
 		fileparts.pop();
 		return fileparts.join("/") +"/";
+	},
+	
+	/** @param {Function} callback */
+	/** @param {Number} groupcount */
+	/** @returns {Function} */
+	/** @constructor */
+	getGroupCallback : function(callback, groupcount)	{
+		var count = 0;
+		return function handler()	{
+			count++;
+			if(count == groupcount)	{
+				if(callback)	{
+					setTimeout(callback, 0);
+				}
+			}
+		}
 	},
 	
 	/** @param {String} url */
@@ -204,7 +203,7 @@ var Jam = {
 		}
 		
 		var loadCount = filename.length;
-		var handler = Jam.__getAsyncHandler(loadCount, onLoadListener);
+		var handler = Jam.getGroupCallback(onLoadListener, loadCount);
 		
 		for(var i = 0; i < loadCount; i++)	{
 			if(this.hasScript(url)){
@@ -262,7 +261,7 @@ var Jam = {
 		}
 		
 		var loadCount = filename.length;
-		var handler = Jam.__getAsyncHandler(loadCount, onExecListener);
+		var handler = Jam.getGroupCallback(onExecListener, loadCount);
 		
 		for(var i = 0; i < loadCount; i++)	{
 			var script = Jam.getScript(basepath +filename[i]);
