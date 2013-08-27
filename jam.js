@@ -651,6 +651,7 @@ Jam.Script.prototype = {
 		function onload()	{
 			script.__status = Jam.ReadyState.READY;
 			if(onExecHandler){
+				console.log("Jam :: Script Executed: "+script.getName());
 				setTimeout(function(){
 					onExecHandler(script);
 				}, 0);
