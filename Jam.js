@@ -3,7 +3,10 @@
 /** @author Neil Stansbury <neil@neilstansbury.com> */
 /** @version 1.0 */
 
-document.addEventListener("DOMContentLoaded", function(){Jam.onready();}, false);
+document.addEventListener("DOMContentLoaded", function(){
+		console.log("JavaScript Asynchronous Module & Namespace Loader v" +Jam.version +" :: Jam is ready...");
+		Jam.onready();
+	}, false);
 
 /** @namespace */
 var Jam = {
