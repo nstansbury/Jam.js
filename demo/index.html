@@ -19,6 +19,10 @@
 				var supplier = new Contacts.Suppliers.Supplier(12345678, "My JavaScript Supplier");
 				
 				console.log(supplier.toString());
+				
+				// Define a standalone delimited object
+				Jam.define("Contacts.Customers.TheBest");
+				console.log("The 'Contacts.Customers.TheBest' Object has been defined: " +(Contacts.Customers.TheBest != undefined));
 			}
 			
 			function jQueryLoaded(){
