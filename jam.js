@@ -118,6 +118,24 @@ var Jam = {
 	/** @returns {Void} */
 	onready : function(){},
 	
+	/** @description Define the named object context and return it */
+	/** @param {String} name */
+	/** @returns {Object} */
+	define : function(name){
+		var context = Jam._global;
+		var path = name.split(".");
+		var len = path.length;
+		for(var i = 0; i < len; i++)	{
+			var part = path[i];
+			if(context.hasOwnProperty(part) == false)	{
+				context[part] = {};
+			}
+			context = context[part];
+		}
+		context .__name__ = name;	// Ala Python
+		return context;
+	},
+	
 	/** @description Import the specified modules asynchrously into the Namespace. */
 	/** @param {String|String[]} namespace */
 	/** @param {String|String[]} [module] */
@@ -313,18 +331,7 @@ Jam.Namespace.prototype = {
 	/** @returns {Object} */
 	getContext : function(){
 		if(this.__context == undefined){
-			var context = Jam._global;
-			var path = this.getName().split(".");
-			var len = path.length;
-			for(var i = 0; i < len; i++)	{
-				var name = path[ i ];
-				if(context.hasOwnProperty(name) == false)	{
-					context[ name ] = {};
-				}
-				context = context[ name ];
-			}
-			context.__name__ = this.getName();	// Ala Python Modules
-			this.__context = context;
+			this.__context = Jam.define(this.getName());
 		}
 		return this.__context;
 	},
