@@ -4,6 +4,7 @@
 /** @version 1.0 */
 
 document.addEventListener("DOMContentLoaded", function(){
+		Jam.defaultPath = Jam.getBaseUrl();
 		console.log("JavaScript Asynchronous Module & Namespace Loader v" +Jam.version +" :: Jam is ready...");
 		Jam.onready();
 	}, false);
