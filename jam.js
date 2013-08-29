@@ -532,7 +532,7 @@ Jam.Module.prototype = {
 		var source = src +'\n\
 				function export_symbols(){\
 					if(symbols == undefined && (typeof EXPORTED_SYMBOLS === "undefined" || Array.isArray(EXPORTED_SYMBOLS) == false)){\
-						throw "Nothing to Export from Module - No symbols declared";\
+						symbols = [];\
 					}\
 					else {\
 						symbols = symbols || EXPORTED_SYMBOLS;\
