@@ -139,10 +139,10 @@ var Jam = {
 	
 	/** @description Import the specified modules asynchrously into the Namespace. */
 	/** @param {String|String[]} namespace */
-	/** @param {String|String[]} [module] */
+	/** @param {String|String[]} [module] Fully qualified path to JavaScript file to import */
 	/** @param {Function} [onImportHandler] */
 	/** @returns {Void} */
-	import : function(namespace, module, onImportHandler){		
+	import : function(namespace, module, onImportHandler){
 		if(Array.isArray(namespace)){
 			if(typeof module !== "undefined" || "function"){		// Oh for multiple function signatures!
 				throw "Modules cannot be specified with multiple Namespaces";
