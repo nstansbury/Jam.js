@@ -435,7 +435,7 @@ Jam.Module.exec = function(module, execHandler){
 			else {
 				module.__status = Jam.ReadyState.ERROR;
 				Jam.Module.stack = [];					// We should do better than this
-				throw(module.getUrl() +": " +e.message);
+				throw(module.getUrl() +": " +e);
 			}
 		}
 	}
