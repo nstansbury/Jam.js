@@ -3,11 +3,6 @@
 /** @author Neil Stansbury <neil@neilstansbury.com> */
 /** @version 1.0 */
 
-document.addEventListener("DOMContentLoaded", function(){
-		Jam.defaultPath = Jam.getBaseUrl();
-		console.log("JavaScript Asynchronous Module & Namespace Loader v" +Jam.version +" :: Jam is ready...");
-		Jam.onready();
-	}, false);
 
 /** @namespace */
 var Jam = {
@@ -28,6 +23,79 @@ var Jam = {
 	
 	/** @type {String} */
 	defaultPath : "",
+	
+	/*
+	* contentloaded.js
+	*
+	* Author: Diego Perini (diego.perini at gmail.com)
+	* Summary: cross-browser wrapper for DOMContentLoaded
+	* Updated: 20101020
+	* License: MIT
+	* Version: 1.2
+	*
+	* URL:
+	* http://javascript.nwbox.com/ContentLoaded/
+	* http://javascript.nwbox.com/ContentLoaded/MIT-LICENSE
+	*
+	*/
+   
+	/** @author iego Perini (diego.perini at gmail.com) Original Code contentLoad.js */
+	/** @param {Window} win DOM Window reference */
+	/** @returns{Void} */
+	init : function(win) {
+		var done = false, top = true,
+		
+		doc = win.document, root = doc.documentElement,
+		
+		add = doc.addEventListener ? 'addEventListener' : 'attachEvent',
+		rem = doc.addEventListener ? 'removeEventListener' : 'detachEvent',
+		pre = doc.addEventListener ? '' : 'on';
+		
+		function loaded(){
+			Jam.defaultPath = Jam.getBaseUrl();
+			console.log("JavaScript Asynchronous Module & Namespace Loader v" +Jam.version +" :: Jam is ready...");
+			Jam.onready();
+		}
+		
+		function init(e) {
+			if(e.type == 'readystatechange' && doc.readyState != 'complete'){
+				return;
+			}
+			(e.type == 'load' ? win : doc)[rem](pre + e.type, init, false);
+			if(!done && (done = true)){
+				loaded.call(win, e.type || e);
+			}
+		}
+	
+		function poll(){
+			try{
+				root.doScroll('left');
+			}
+			catch(e){
+				setTimeout(poll, 50);
+				return;
+			}
+			init('poll');
+		};
+		
+		if(doc.readyState == 'complete'){
+			loaded.call(win, 'lazy');
+		}
+		else {
+			if(doc.createEventObject && root.doScroll){
+				try {
+					top = !win.frameElement;
+				}
+				catch(e){}
+				if(top){
+					poll()
+				};
+			}
+			doc[add](pre + 'DOMContentLoaded', init, false);
+			doc[add](pre + 'readystatechange', init, false);
+			win[add](pre + 'load', init, false);
+		}
+	},
 	
 	/** @returns {String} */
 	getBaseUrl : function()	{
@@ -681,3 +749,5 @@ Jam.Script.prototype = {
 	}
 }
 
+
+Jam.init(window);
