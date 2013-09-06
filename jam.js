@@ -389,8 +389,12 @@ Jam.Namespace = function(namespace){
 	this.__name = namespace;
 }
 Jam.Namespace.prototype = {
+	
 	/** @private */
 	__modules : {},
+	
+	/** @private */
+	__listeners : {},
 	
 	/** @returns {String} */
 	getName : function(){
@@ -412,27 +416,35 @@ Jam.Namespace.prototype = {
 	},
 	
 	/** @param {Jam.Module} module */
-	/** @param {Function} handler */
+	/** @param {Function} listener */
 	/** @returns {Integer} */
-	import : function(module, handler){
-		var ns = this
+	import : function(module, listener){
+		var ns = this;
+		var url = module.getUrl();
 		function onReady(){
 			if(module.getReadyState() == Jam.ReadyState.READY){
 				console.log("Jam :: Namespace Imported: "+ns.getName());
-				ns.__modules[module.getUrl()] = module;
-				callback();	
-			}
-		}
-		function callback(){
-			if(handler){
-				setTimeout(handler, 0);	// Because otherwise exceptions thrown look like module exceptions
+				ns.__modules[url] = module;
+				if(ns.__listeners[url] == undefined){
+					return;
+				}
+				for(var i = 0; i < ns.__listeners[url].length; i++){
+					setTimeout(ns.__listeners[url][i], 0);	// Ensures exceptions thrown don't look like module exceptions
+				}
+				ns.__listeners[url] = null;
 			}
 		}
 		if(this.hasModule(module)){
-			callback();
+			if(listener){
+				setTimeout(listener, 0);
+			}
 			return;
 		}
 		else {
+			if(listener){
+				(this.__listeners[url] != undefined) ? this.__listeners[url].push(listener) : this.__listeners[url] = [listener];
+			}
+			// This should be a proper event listener...!
 			module.onready = onReady;
 			module.export(this.getContext());	
 		}
