@@ -23,7 +23,10 @@ var Jam = {
 	
 	/** @type {String} */
 	defaultPath : "",
-	
+
+    /** @type {Boolean} */
+    preventCache : false,
+
 	/*
 	* contentloaded.js
 	*
@@ -225,6 +228,9 @@ var Jam = {
 		else if(typeof module != "string"){
 			onImportHandler = module;	// Module is optional param
 			module = this.defaultPath +namespace +Jam.Module.defaultExtn;
+            if(this.preventCache){
+                //module += "?" +Math.random();
+            }
 		}
 		
 		if(Jam.hasNamespace(namespace)){
@@ -236,8 +242,10 @@ var Jam = {
 		
 		if(Jam.hasModule(module)){
 			var mod = Jam.getModule(module);
-			if(ns.hasModule(mod) && onImportHandler){
-				onImportHandler();
+			if(ns.hasModule(mod)){
+                if(onImportHandler){
+                    setTimeout(onImportHandler, 0);
+                }
 				return;
 			}
 		}
@@ -438,15 +446,15 @@ Jam.Namespace.prototype = {
 			if(listener){
 				setTimeout(listener, 0);
 			}
-			return;
 		}
 		else {
 			if(listener){
 				(this.__listeners[url] != undefined) ? this.__listeners[url].push(listener) : this.__listeners[url] = [listener];
 			}
-			// This should be a proper event listener...!
-			module.onready = onReady;
-			module.export(this.getContext());	
+			if(module.getReadyState() == Jam.ReadyState.EMPTY){
+                module.onready = onReady;
+            }
+            module.export(this.getContext());
 		}
 	}
 }
@@ -460,15 +468,11 @@ Jam.ReadyState = {
 	ERROR : 0x3,
 	LOADED : 0x4,	// Module code is loaded
 	PARSED : 0x5,	// Module is parsed
-	ENDED : 0x6,	// Module is exported
-	WAITING : 0x7,	// Waiting for dependancies
-	READY : 0x8		// Module dependancies are exported
+    STATIC : 0x6,	// Module static module dependencies are exported
+	READY : 0x7		// Module dependencies are exported
 }
 
-/*	TBC
-	Jam.Module should listen to module for completion events
-	module should listen to Jam for READY event
-*/
+
 
 /** @constructor */
 /** @param {String} url */
@@ -476,86 +480,56 @@ Jam.Module = function(url){
 	this.__url = url;
 }
 
-/** @private */
-/** @type {Jam.Module[]} */
-Jam.Module.stack = [];
-
 /** @type {String} */
 Jam.Module.defaultExtn = ".jsm";
 
+/** @protected */
+/** @type {Object[]} */
+Jam.Module.exports = [];
 
-/** @param {Jam.Module} module */
-/** @param {Function} execHandler */
-/** @returns {Void} */
-Jam.Module.exec = function(module, execHandler){
-	function exec(){
-		try {
-			if(Jam.Module.isWaiting(module) == false){
-				var item = Jam.Module.getCurrent();
-				execHandler.call(module);
-				if(Jam.Module.isWaiting(module)){
-					module.__status = Jam.ReadyState.WAITING;
-					item.handler = execHandler;
-				}
-				else {
-					Jam.Module.stack.pop();					// Take this module off the stack
-					module.onready();
-					var next = Jam.Module.getCurrent();
-					if(next){
-						Jam.Module.exec(next.module, next.handler);	
-					}
-				}
-			}
-		}
-		catch(e){
-			if(Jam.Module.isWaiting(module)){			// Are we waiting for dependancies after executing the handler?
-				module.__status = Jam.ReadyState.WAITING;
-				item.handler = execHandler;
-			}
-			else {
-				module.__status = Jam.ReadyState.ERROR;
-				Jam.Module.stack = [];					// We should do better than this
-				throw(module.getUrl() +": " +e);
-			}
-		}
-	}
-	setTimeout(exec, 0);
-}
-
-/** @param {Jam.Module} module */
-/** @returns {Void} */
-Jam.Module.isWaiting = function(module){
-	if(Jam.Module.stack.length > 0){
-		return Jam.Module.stack[Jam.Module.stack.length -1].module == module ? false : true;	
+/** @protected */
+/** @param {Function} module */
+/** @returns {void} */
+Jam.Module.hasDependency = function(module){
+	if(Jam.Module.exports.length > 0){
+		return Jam.Module.exports[Jam.Module.exports.length -1].module == module ? false : true;
 	}
 	else {
 		return false;
 	}
 }
 
-/** @returns {Object} */
-Jam.Module.getCurrent = function(){
-	if(Jam.Module.stack.length > 0){
-		return Jam.Module.stack[Jam.Module.stack.length -1];
+/** @protected */
+/** @returns {Function} */
+Jam.Module.getDependency = function(){
+	if(Jam.Module.exports.length > 0){
+		return Jam.Module.exports[Jam.Module.exports.length -1].exports;
 	}
 	else {
 		return null;	
 	}
 }
 
-/** @param {Jam.Module} module */
-/** @returns {Void} */
-Jam.Module.add = function(module, handler){
-	var item = {
-		module : module,
-		handler : handler
-	}
-	Jam.Module.stack.push(item);
+/** @protected */
+/** @param {Jam.Module} */
+/** @returns {void} */
+Jam.Module.beginExport = function(module, exporter){
+    var item = {
+        module : module,
+        exports : exporter
+    }
+    Jam.Module.exports.push(item);
+}
+
+/** @protected */
+/** @returns {void} */
+Jam.Module.endExport = function(){
+    Jam.Module.exports.pop();
 }
 
 Jam.Module.prototype = {
 	/** @private */
-	__export : function(){},
+    __scope : function(){},
 	
 	/** @private */
 	/** @type {Jam.ReadyState} */
@@ -570,13 +544,11 @@ Jam.Module.prototype = {
 	getReadyState : function(){
 		return this.__status;
 	},
-	
-	/** @param {Jam.Module} module */
+
 	/** @param {Function} loadHandler */
 	/** @returns {void} */
 	load : function(loadHandler){
-		Jam.Module.add(this, null);
-		
+
 		var module = this;
 		if(window.XMLHttpRequest)	{
 			var httpRequest = new XMLHttpRequest();
@@ -588,7 +560,6 @@ Jam.Module.prototype = {
 		httpRequest.onreadystatechange = function() {
 			switch(httpRequest.readyState){
 				case 2:
-					module.__status = Jam.ReadyState.LOADING;
 					break;
 				case 3:
 					module.__status = Jam.ReadyState.STALLED;		// Need a timeout check here
@@ -609,6 +580,7 @@ Jam.Module.prototype = {
 			}
 		}
 		httpRequest.send();
+        this.__status = Jam.ReadyState.LOADING;
 	},
 	
 	/** @param {String} src */
@@ -631,52 +603,104 @@ Jam.Module.prototype = {
 				export_symbols();'
 		try {
 			//console.log("Jam :: Module Imported: " +this.getUrl());
-			this.exec = new Function("context", "symbols", source);
+			this.__scope = new Function("context", "symbols", source);
 			this.__status = Jam.ReadyState.PARSED;
 		}
 		catch(e){	// Error in the module code
-			console.log("Jam :: Module Import Failed: " +this.getUrl());
 			this.__status = Jam.ReadyState.ERROR;
-			throw e;
+			throw "Jam Module Import Failed: " +this.getUrl() +" " +e;
 		}
 	},
-	
+
 	/** @param {Object} context */
 	/** @param {String[]} [symbols] */
 	/** @returns {void} */
 	export : function(context, symbols){
-		
-		function onLoadHandler(data){
-			if(this.getReadyState() == Jam.ReadyState.LOADED){
-				this.import(data);
-				var module = this;
-				setTimeout(function(){
-					module.export(context, symbols);	
-				}, 0);
-			}
+
+        if(context == null || typeof context != "object"){
+            throw "Jam :: Invalid context specified for Module export";
+        }
+        if(symbols != null && (Array.isArray(symbols) == false || symbols.length == 0)){
+            throw "Jam :: Invalid symbols specified for Module export";
+        }
+
+        var module = this;
+		function onload(data){
+            //console.log("Loaded: " +module.getUrl());
+            module.import(data);
+            module.export(context, symbols);
 		}
-		
-		function onExecHandler(){
-			if(this.getReadyState() >= Jam.ReadyState.PARSED){
-				this.exec.call(context, context, symbols);
-				//console.log("Jam :: Module Executed: " +this.getUrl());
-				this.__status = Jam.ReadyState.READY;
-			}
+
+        function export_module(){
+            var error = "";
+            try {
+                if(module.getReadyState() < Jam.ReadyState.READY){  // Can't figure out why it can't be < STATIC - should be totally exported
+                    module.__scope.call(context, context, symbols);
+                }
+            }
+            catch(e){
+                error = e;
+            }
+            finally {
+                if(error){
+                    if(Jam.Module.hasDependency(module)){
+                        //console.log("Module Dependency Exception: " +error +"\n" +module.getUrl());
+                        return;
+                    }
+                    throw error
+                }
+
+                if(Jam.Module.hasDependency(module)){
+                    module.__status = Jam.ReadyState.STATIC;
+                }
+                else {
+                    //console.log("Jam :: Module Executed: " +module.getUrl());
+                    Jam.Module.endExport();
+                    if(module.getReadyState() != Jam.ReadyState.READY){
+                        module.__status = Jam.ReadyState.READY;
+                        module.onready();
+                    }
+                }
+                var dep = Jam.Module.getDependency();
+                if(dep){
+                    dep();
+                }
+
+                /*
+                if(Jam.Module.hasDependency(module)){
+                    console.log("Module Dependency " +error +"\n" +module.getUrl());
+                    module.__status = Jam.ReadyState.STATIC;
+                }
+                else if(error){
+                    throw error;
+                }
+                else {
+                    Jam.Module.endExport();
+                    if(module.getReadyState() != Jam.ReadyState.READY){
+                        module.__status = Jam.ReadyState.READY;
+                        module.onready();
+                    }
+                    var dep = Jam.Module.getDependency();
+                    if(dep){
+                        dep();
+                    }
+                }
+                */
+            }
+        }
+
+        if(this.getReadyState() < Jam.ReadyState.READY){
+            Jam.Module.beginExport(module, export_module);
+        }
+
+		if(this.getReadyState() < Jam.ReadyState.LOADING){
+            //console.log("Exporting: " +this.getUrl());
+			this.load(onload);
 		}
-		
-		if(context == null || typeof context != "object"){
-			throw "Jam :: Invalid context specified for Module export";
-		}
-		if(symbols != null && (Array.isArray(symbols) == false || symbols.length == 0)){
-			throw "Jam :: Invalid symbols specified for Module export";
-		}
-		
-		if(this.getReadyState() < Jam.ReadyState.LOADING){	
-			this.load(onLoadHandler);
-		}
-		else if(this.getReadyState() >= Jam.ReadyState.PARSED){
-			Jam.Module.exec(this, onExecHandler);
-		}
+        else if(this.getReadyState() >= Jam.ReadyState.PARSED){
+            //console.log("Executing: " +module.getUrl());
+            setTimeout(export_module, 0);
+        }
 	},
 
 	/** @returns {void} */

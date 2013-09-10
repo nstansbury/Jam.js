@@ -1,6 +1,8 @@
 "use strict";
 
-Jam.Imports("Contacts");
+var EXPORTED_SYMBOLS = ["Manager", "Worker"];
+
+Jam.import("Contacts");
 
 
 function Manager(firstname, lastname, employeeId){
@@ -9,7 +11,7 @@ function Manager(firstname, lastname, employeeId){
 }
 Manager.prototype = {
 	__proto__ : Contacts.Person.prototype,
-	
+
 	getEmployeeId : function(){
 		return this.__employeeId;
 	}
@@ -22,7 +24,7 @@ function Worker(firstname, lastname, employeeId){
 }
 Worker.prototype = {
 	__proto__ : Contacts.Person.prototype,
-	
+
 	getEmployeeId : function(){
 		return this.__employeeId;
 	}

@@ -1,9 +1,9 @@
 "use strict";
 
-Jam.import("Contacts");
-
-
 var EXPORTED_SYMBOLS = ["Supplier"];
+
+Jam.import("Contacts");
+Jam.import("Contacts.Employees");
 
 
 function supplier_toString(s){
