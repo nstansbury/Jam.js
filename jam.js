@@ -488,43 +488,58 @@ Jam.Module.defaultExtn = ".jsm";
 Jam.Module.exports = [];
 
 /** @protected */
-/** @param {Function} module */
-/** @returns {void} */
+/** @param {Jam.Module} module */
+/** @returns {Boolean} */
 Jam.Module.hasDependency = function(module){
-	if(Jam.Module.exports.length > 0){
-		return Jam.Module.exports[Jam.Module.exports.length -1].module == module ? false : true;
+    var end = Jam.Module.exports.length -1;
+	if(end >= 0){
+		return Jam.Module.exports[end].module == module ? false : true;
 	}
-	else {
-		return false;
-	}
+	return false;
 }
 
 /** @protected */
 /** @returns {Function} */
 Jam.Module.getDependency = function(){
-	if(Jam.Module.exports.length > 0){
-		return Jam.Module.exports[Jam.Module.exports.length -1].exports;
+    var end = Jam.Module.exports.length -1;
+	if(end >= 0){
+		return Jam.Module.exports[end].exports;
 	}
-	else {
-		return null;	
-	}
+	return null;
+}
+
+/** @protected */
+/** @param {Jam.Module} module */
+/** @returns {Boolean} */
+Jam.Module.finalExport = function(module){
+    var end = Jam.Module.exports.length -1;
+    if(end >= 0){
+        return Jam.Module.exports[end].module == module ? true : false;
+    }
+    return false;
 }
 
 /** @protected */
 /** @param {Jam.Module} */
 /** @returns {void} */
 Jam.Module.beginExport = function(module, exporter){
-    var item = {
-        module : module,
-        exports : exporter
+    if(Jam.Module.finalExport(module) == false){
+        //console.log("___Begin Export: " +module.getUrl());
+        var item = {
+            module : module,
+            exports : exporter
+        }
+        Jam.Module.exports.push(item);
     }
-    Jam.Module.exports.push(item);
 }
 
 /** @protected */
+/** @param {Jam.Module} */
 /** @returns {void} */
-Jam.Module.endExport = function(){
-    Jam.Module.exports.pop();
+Jam.Module.endExport = function(module){
+    if(Jam.Module.finalExport(module)){
+        Jam.Module.exports.pop();
+    }
 }
 
 Jam.Module.prototype = {
@@ -634,8 +649,9 @@ Jam.Module.prototype = {
         function export_module(){
             var error = "";
             try {
-                if(module.getReadyState() < Jam.ReadyState.READY){  // Can't figure out why it can't be < STATIC - should be totally exported
+                if(module.getReadyState() == Jam.ReadyState.PARSED){
                     module.__scope.call(context, context, symbols);
+                    //console.log("_____Jam :: Module Executed: " +module.getUrl());
                 }
             }
             catch(e){
@@ -654,8 +670,7 @@ Jam.Module.prototype = {
                     module.__status = Jam.ReadyState.STATIC;
                 }
                 else {
-                    //console.log("Jam :: Module Executed: " +module.getUrl());
-                    Jam.Module.endExport();
+                    Jam.Module.endExport(module);
                     if(module.getReadyState() != Jam.ReadyState.READY){
                         module.__status = Jam.ReadyState.READY;
                         module.onready();
@@ -665,27 +680,6 @@ Jam.Module.prototype = {
                 if(dep){
                     dep();
                 }
-
-                /*
-                if(Jam.Module.hasDependency(module)){
-                    console.log("Module Dependency " +error +"\n" +module.getUrl());
-                    module.__status = Jam.ReadyState.STATIC;
-                }
-                else if(error){
-                    throw error;
-                }
-                else {
-                    Jam.Module.endExport();
-                    if(module.getReadyState() != Jam.ReadyState.READY){
-                        module.__status = Jam.ReadyState.READY;
-                        module.onready();
-                    }
-                    var dep = Jam.Module.getDependency();
-                    if(dep){
-                        dep();
-                    }
-                }
-                */
             }
         }
 
