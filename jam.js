@@ -41,7 +41,7 @@ var Jam = {
    
 	/** @author iego Perini (diego.perini at gmail.com) Original Code contentLoad.js */
 	/** @param {Window} win DOM Window reference */
-	/** @returns{Void} */
+	/** @returns{void} */
 	init : function(win) {
 		var done = false, top = true,
 		
@@ -184,7 +184,7 @@ var Jam = {
 		return script;
 	},
 	
-	/** @returns {Void} */
+	/** @returns {void} */
 	onready : function(){},
 	
 	/** @description Define the named object context and return it */
@@ -209,7 +209,7 @@ var Jam = {
 	/** @param {String|String[]} namespace */
 	/** @param {String|String[]} [module] Fully qualified path to JavaScript file to import */
 	/** @param {Function} [onImportHandler] */
-	/** @returns {Void} */
+	/** @returns {void} */
 	import : function(namespace, module, onImportHandler){
 		if(Array.isArray(namespace)){
 			if(typeof module !== "undefined" || "function"){		// Oh for multiple function signatures!
@@ -250,7 +250,7 @@ var Jam = {
 	
 	/** @description This function allows us to use the static '__proto__' declaration (or just 'proto' in ES3) declaration for inheritance on Opera & IE
 	/** @param {Object} base */
-	/** @returns {Void} */
+	/** @returns {void} */
 	extend : function(base)	{
 		if(Object.__proto__ != undefined)	{
 			return;	
@@ -279,7 +279,7 @@ var Jam = {
 	/** @param {Array|String} filename */
 	/** @param {String} [basepath] */
 	/** @param {Function} [onLoadListener] */
-	/** @returns {Void} */
+	/** @returns {void} */
 	load : function(filename, basepath, onLoadListener)	{
 		if(typeof(filename) == "string")	{
 			filename = [filename];
@@ -313,7 +313,7 @@ var Jam = {
 	/** @param {String} [basepath] */
 	/** @param {Function} [onExecListener] */
 	/** @param {Function} [onExecError] */
-	/** @returns {Void} */
+	/** @returns {void} */
 	exec : function(filename, basepath, onExecListener, onExecError)	{
 		if(typeof(basepath) == "function")	{		// Basepath has not been specified
 			if(typeof(onExecListener) == "function")	{
@@ -417,7 +417,7 @@ Jam.Namespace.prototype = {
 	
 	/** @param {Jam.Module} module */
 	/** @param {Function} listener */
-	/** @returns {Integer} */
+	/** @returns {void} */
 	import : function(module, listener){
 		var ns = this;
 		var url = module.getUrl();
@@ -573,7 +573,7 @@ Jam.Module.prototype = {
 	
 	/** @param {Jam.Module} module */
 	/** @param {Function} loadHandler */
-	/** @returns {Void} */
+	/** @returns {void} */
 	load : function(loadHandler){
 		Jam.Module.add(this, null);
 		
@@ -612,7 +612,7 @@ Jam.Module.prototype = {
 	},
 	
 	/** @param {String} src */
-	/** @returns {Void} */
+	/** @returns {void} */
 	import : function(src){
 		var source = src +'\n\
 				function export_symbols(){\
@@ -643,7 +643,7 @@ Jam.Module.prototype = {
 	
 	/** @param {Object} context */
 	/** @param {String[]} [symbols] */
-	/** @returns {Void} */
+	/** @returns {void} */
 	export : function(context, symbols){
 		
 		function onLoadHandler(data){
@@ -678,8 +678,8 @@ Jam.Module.prototype = {
 			Jam.Module.exec(this, onExecHandler);
 		}
 	},
-	
-	/** @returns {Void} */
+
+	/** @returns {void} */
 	onready : function(){}
 }
 
@@ -730,7 +730,7 @@ Jam.Script.prototype = {
 	},
 	
 	/** @param {Function} [onLoadHandler] */
-	/** @returns {Void} */
+	/** @returns {void} */
 	load : function(onLoadHandler){
 		
 		//var script = this;
@@ -738,7 +738,7 @@ Jam.Script.prototype = {
 	},
 	
 	/** @param {Function} [onExecHandler] */
-	/** @returns {Void} */
+	/** @returns {void} */
 	exec : function(onExecHandler){
 		var script = this;
 		function onload()	{
