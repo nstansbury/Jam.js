@@ -524,7 +524,7 @@ Jam.Module.finalExport = function(module){
 /** @returns {void} */
 Jam.Module.beginExport = function(module, exporter){
     if(Jam.Module.finalExport(module) == false){
-        //console.log("___Begin Export: " +module.getUrl());
+        //console.log("_____Jam :: Begin Export: " +module.getUrl());
         var item = {
             module : module,
             exports : exporter
@@ -538,6 +538,7 @@ Jam.Module.beginExport = function(module, exporter){
 /** @returns {void} */
 Jam.Module.endExport = function(module){
     if(Jam.Module.finalExport(module)){
+        //console.log("_____Jam :: End Export: " +module.getUrl());
         Jam.Module.exports.pop();
     }
 }
@@ -641,15 +642,19 @@ Jam.Module.prototype = {
 
         var module = this;
 		function onload(data){
-            //console.log("Loaded: " +module.getUrl());
+            //console.log("_____Jam :: Module Loaded: " +module.getUrl());
             module.import(data);
             module.export(context, symbols);
 		}
 
         function export_module(){
+            //console.log("_____Jam :: Module Executing: " +module.getUrl() +" State: " +module.getReadyState());
             var error = "";
             try {
-                if(module.getReadyState() == Jam.ReadyState.PARSED){
+                if(module.getReadyState() < Jam.ReadyState.PARSED){
+                    return;
+                }
+                else if(module.getReadyState() < Jam.ReadyState.STATIC){
                     module.__scope.call(context, context, symbols);
                     //console.log("_____Jam :: Module Executed: " +module.getUrl());
                 }
@@ -657,42 +662,42 @@ Jam.Module.prototype = {
             catch(e){
                 error = e;
             }
-            finally {
-                if(error){
-                    if(Jam.Module.hasDependency(module)){
-                        //console.log("Module Dependency Exception: " +error +"\n" +module.getUrl());
-                        return;
-                    }
-                    throw error
-                }
 
+            if(error){
                 if(Jam.Module.hasDependency(module)){
-                    module.__status = Jam.ReadyState.STATIC;
+                    //console.log("_____Jam :: Module Dependency Exception: " +error +"\n" +module.getUrl());
+                    return;
                 }
-                else {
-                    Jam.Module.endExport(module);
-                    if(module.getReadyState() != Jam.ReadyState.READY){
-                        module.__status = Jam.ReadyState.READY;
-                        module.onready();
-                    }
-                }
-                var dep = Jam.Module.getDependency();
-                if(dep){
-                    dep();
+                throw error
+            }
+
+            if(Jam.Module.hasDependency(module)){
+                module.__status = Jam.ReadyState.STATIC;
+            }
+            else {
+                Jam.Module.endExport(module);
+                if(module.getReadyState() != Jam.ReadyState.READY){
+                    module.__status = Jam.ReadyState.READY;
+                    module.onready();
                 }
             }
+            var dep = Jam.Module.getDependency();
+            if(dep){
+                dep();
+            }
+
         }
+
+        //console.log("_____Jam :: Exporting: " +this.getUrl());
 
         if(this.getReadyState() < Jam.ReadyState.READY){
             Jam.Module.beginExport(module, export_module);
         }
 
 		if(this.getReadyState() < Jam.ReadyState.LOADING){
-            //console.log("Exporting: " +this.getUrl());
 			this.load(onload);
 		}
         else if(this.getReadyState() >= Jam.ReadyState.PARSED){
-            //console.log("Executing: " +module.getUrl());
             setTimeout(export_module, 0);
         }
 	},
