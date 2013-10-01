@@ -611,8 +611,12 @@ Jam.Module.prototype = {
 						symbols = symbols || EXPORTED_SYMBOLS;\
 					}\
 					for(var i = 0; i < symbols.length; i++){\
-						var symbol = symbols[ i ];;\
-						context[symbol] = eval(symbol);\
+						var symbol = symbols[ i ];\
+						try{\
+							context[symbol] = eval(symbol);\
+						}catch(e){\
+							throw "Error Exporting Symbol: `" +symbol +"` from " +context.__name__;\
+						}\
 						Jam.extend(context[symbol]);\
 					}\
 				};\
