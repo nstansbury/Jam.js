@@ -1,6 +1,6 @@
 "use strict";
 
-//Jam.import("X.Y.Z");
+//imports("X.Y.Z");
 
 var EXPORTED_SYMBOLS = ["getName"];
 	

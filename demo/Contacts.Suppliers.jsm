@@ -2,8 +2,8 @@
 
 var EXPORTED_SYMBOLS = ["Supplier"];
 
-Jam.import("Contacts");
-Jam.import("Contacts.Employees");
+imports("Contacts");
+imports("Contacts.Employees");
 
 
 function supplier_toString(s){

@@ -1,13 +1,13 @@
 "use strict";
 /** @description A JavaScript Asynchronous Module loader */
 /** @author Neil Stansbury <neil@neilstansbury.com> */
-/** @version 1.0 */
+/** @version 1.1 */
 
 
 /** @namespace */
 var Jam = {
-	/** @type Integer */
-	version : 1.0,
+	/** @type {string} */
+	version : "1.1.0",
 	
 	/** @private */
 	_global : this,
@@ -213,7 +213,7 @@ var Jam = {
 	/** @param {String|String[]} [module] Fully qualified path to JavaScript file to import */
 	/** @param {Function} [onImportHandler] */
 	/** @returns {void} */
-	import : function(namespace, module, onImportHandler){
+	imports : function(namespace, module, onImportHandler){
 		if(Array.isArray(namespace)){
 			if(typeof module !== "undefined" || "function"){		// Oh for multiple function signatures!
 				throw "Modules cannot be specified with multiple Namespaces";
@@ -253,7 +253,7 @@ var Jam = {
 			var mod = Jam.addModule(module);
 		}
 		
-		ns.import(mod, onImportHandler);
+		ns.imports(mod, onImportHandler);
 	},
 	
 	/** @description This function allows us to use the static '__proto__' declaration (or just 'proto' in ES3) declaration for inheritance on Opera & IE
@@ -426,7 +426,7 @@ Jam.Namespace.prototype = {
 	/** @param {Jam.Module} module */
 	/** @param {Function} listener */
 	/** @returns {void} */
-	import : function(module, listener){
+	imports : function(module, listener){
 		var ns = this;
 		var url = module.getUrl();
 		function onReady(){
@@ -454,7 +454,7 @@ Jam.Namespace.prototype = {
 			if(module.getReadyState() == Jam.ReadyState.EMPTY){
                 module.onready = onReady;
             }
-            module.export(this.getContext());
+            module.exports(this.getContext());
 		}
 	}
 }
@@ -485,15 +485,15 @@ Jam.Module.defaultExtn = ".jsm";
 
 /** @protected */
 /** @type {Object[]} */
-Jam.Module.exports = [];
+Jam.Module.exported = [];
 
 /** @protected */
 /** @param {Jam.Module} module */
 /** @returns {Boolean} */
 Jam.Module.hasDependency = function(module){
-    var end = Jam.Module.exports.length -1;
+    var end = Jam.Module.exported.length -1;
 	if(end >= 0){
-		return Jam.Module.exports[end].module == module ? false : true;
+		return Jam.Module.exported[end].module == module ? false : true;
 	}
 	return false;
 }
@@ -501,9 +501,9 @@ Jam.Module.hasDependency = function(module){
 /** @protected */
 /** @returns {Function} */
 Jam.Module.getDependency = function(){
-    var end = Jam.Module.exports.length -1;
+    var end = Jam.Module.exported.length -1;
 	if(end >= 0){
-		return Jam.Module.exports[end].exports;
+		return Jam.Module.exported[end].exports;
 	}
 	return null;
 }
@@ -512,9 +512,9 @@ Jam.Module.getDependency = function(){
 /** @param {Jam.Module} module */
 /** @returns {Boolean} */
 Jam.Module.finalExport = function(module){
-    var end = Jam.Module.exports.length -1;
+    var end = Jam.Module.exported.length -1;
     if(end >= 0){
-        return Jam.Module.exports[end].module == module ? true : false;
+        return Jam.Module.exported[end].module == module ? true : false;
     }
     return false;
 }
@@ -529,7 +529,7 @@ Jam.Module.beginExport = function(module, exporter){
             module : module,
             exports : exporter
         }
-        Jam.Module.exports.push(item);
+        Jam.Module.exported.push(item);
     }
 }
 
@@ -538,8 +538,8 @@ Jam.Module.beginExport = function(module, exporter){
 /** @returns {void} */
 Jam.Module.endExport = function(module){
     if(Jam.Module.finalExport(module)){
-        //console.log("_____Jam :: End Export: " +module.getUrl());
-        Jam.Module.exports.pop();
+        //console.log("_____Jam :: End exports: " +module.getUrl());
+        Jam.Module.exported.pop();
     }
 }
 
@@ -601,7 +601,7 @@ Jam.Module.prototype = {
 	
 	/** @param {String} src */
 	/** @returns {void} */
-	import : function(src){
+	imports : function(src){
 		var source = src +'\n\
 				function export_symbols(){\
 					if(symbols == undefined && (typeof EXPORTED_SYMBOLS === "undefined" || Array.isArray(EXPORTED_SYMBOLS) == false)){\
@@ -635,7 +635,7 @@ Jam.Module.prototype = {
 	/** @param {Object} context */
 	/** @param {String[]} [symbols] */
 	/** @returns {void} */
-	export : function(context, symbols){
+	exports : function(context, symbols){
 
         if(context == null || typeof context != "object"){
             throw "Jam :: Invalid context specified for Module export";
@@ -647,8 +647,8 @@ Jam.Module.prototype = {
         var module = this;
 		function onload(data){
             //console.log("_____Jam :: Module Loaded: " +module.getUrl());
-            module.import(data);
-            module.export(context, symbols);
+            module.imports(data);
+            module.exports(context, symbols);
 		}
 
         function export_module(){
@@ -793,5 +793,14 @@ Jam.Script.prototype = {
 	}
 }
 
+
+/** @description Import the specified modules asynchrously into the Namespace. */
+/** @param {String|String[]} namespace */
+/** @param {String|String[]} [module] Fully qualified path to JavaScript file to import */
+/** @param {Function} [onImportHandler] */
+/** @returns {void} */
+function imports(namespace, module, onImportHandler){
+	Jam.imports.apply(Jam, arguments)
+}
 
 Jam.init(window);

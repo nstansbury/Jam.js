@@ -5,11 +5,15 @@ JavaScript Asynchronous Module Loader
 A super light weight and easy to use Module and Namespace loader inspired by Mozilla's JavaScript code modules: https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules
 
 ```javascript
-Jam.import("My.Qualified.Namespace");
+Jam.imports("My.Qualified.Namespace");
 ```
 Or
 ```javascript
-Jam.import("My.Qualified.Namespace", ["module1.jsm", "module2.jsm"], callback);
+Jam.imports("My.Qualified.Namespace", ["module1.jsm", "module2.jsm"], callback);
+```
+Or more simply using the global `imports()` function
+```javascript
+imports("My.Qualified.Namespace");
 ```
 It is designed so that unlike other AMD/Module loading mechanisms, no changes to your existing code or your coding style are required, and there is no need to wrap everything in closures, self executing functions or callbacks etc.
 
@@ -23,7 +27,7 @@ A module can itself import other Namespaces or Modules. When importing dependant
 
 // I can asynchronously import any number of other dependant Namespaces or Modules
 // in a module too - and without requiring a callback
-Jam.import("My.Other.Namespace");
+Jam.imports("My.Other.Namespace");
 
 // Anything I don't export is private to the Module
 var EXPORTED_SYMBOLS = ["Thing1", "Thing2"];
@@ -52,7 +56,7 @@ function init(){
 	// functions to achieve my privacy.  I look just like any other function.
 }
 ```
-By default, Jam.import() assumes every namespace has a default module, of the namespace name with a .jsm extension. This allows a single namespace module to transparently import any required modules, without the caller being required to know in advance and specifiy the modules the Namespace depends on.
+By default, Jam.imports() assumes every namespace has a default module, of the namespace name with a .jsm extension. This allows a single namespace module to transparently import any required modules, without the caller being required to know in advance and specifiy the modules the Namespace depends on.
 
 Modules and Namespaces can also be hacked around as needed, such as importing random JS files into useful namespaces as well as importing one Module into multiple Namespaces to share private data between them.
 

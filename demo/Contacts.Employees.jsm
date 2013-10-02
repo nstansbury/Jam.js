@@ -2,7 +2,7 @@
 
 var EXPORTED_SYMBOLS = ["Manager", "Worker"];
 
-Jam.import("Contacts");
+imports("Contacts");
 
 
 function Manager(firstname, lastname, employeeId){
