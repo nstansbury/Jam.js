@@ -293,29 +293,36 @@ var Jam = {
 	/** @returns {void} */
 	extend : function(base)	{
 		if(Object.__proto__ != undefined)	{
-			return;	
+			//return;
 		}
 		function prototypeObject(superClass, subClass)	{
-			for(var key in superClass)	{
-				if(subClass[ key ] == undefined)	{	// Has subClass overwritten superClass
-					subClass[ key ] = superClass[ key ];
+			for(var property in superClass)	{
+				if(subClass.hasOwnProperty(property) == false)	{	// Has subClass overridden superClass
+                    var descriptor = Object.getOwnPropertyDescriptor(superClass, property);
+                    if(descriptor){
+                        Object.defineProperty(subClass, property, descriptor);
+                    }
 				}
 			}
+            if(superClass.hasOwnProperty("__proto__")){
+                prototypeObject(superClass.__proto__, subClass);
+            }
 		}
-		for(var name in base)	{
-			var object = base[ name ];
-			if(typeof(object) == "function" && object.prototype != undefined && object.prototype.__proto__ != undefined)		{	// Constructor.prototype.__proto__
-				console.log("Jam :: Prototyping Object: " +name);
-				prototypeObject(object.prototype.__proto__, object.prototype);
-			}
-			else if(typeof(object) == "object" && object.__proto__ != undefined)		{		// Object.__proto__
-				console.log("Jam :: Prototyping Object: " +name);
-				prototypeObject(object.__proto__, object);
-			}
-		}
+
+        if(typeof(base) == "function" && base.prototype != undefined && base.prototype.__proto__ != undefined){ // Constructor.prototype.__proto__
+            console.log("Jam :: Prototyping Constructor: " +base.name);
+            prototypeObject(base.prototype.__proto__, base.prototype);
+        }
+        else if(typeof(base) == "object" && base.__proto__ != undefined){		                                // Object.__proto__
+            for(var name in base)	{
+                console.log("Jam :: Prototyping Object Literal: " +name);
+                var object = base[name];
+                prototypeObject(object.__proto__, object);
+            }
+        }
 	},
 	
-	/** @description Load the specified scripts asynchrously without executing them */
+	/** @description Load the specified scripts asynchronously without executing them */
 	/** @param {Array|String} filename */
 	/** @param {String} [basepath] */
 	/** @param {Function} [onLoadListener] */

@@ -1,15 +1,15 @@
 "use strict";
 
-var EXPORTED_SYMBOLS = ["Manager", "Worker"];
+var EXPORTED_SYMBOLS = ["Manager", "Employee"];
 
 imports("Contacts");
 
 
-function Manager(firstname, lastname, employeeId){
-	Contacts.Person.call(this, arguments);
+function Employee(firstname, lastname, employeeId){
+	Contacts.Person.call(this, firstname, lastname);
 	this.__employeeId = employeeId;
 }
-Manager.prototype = {
+Employee.prototype = {
 	__proto__ : Contacts.Person.prototype,
 
 	getEmployeeId : function(){
@@ -17,15 +17,13 @@ Manager.prototype = {
 	}
 }
 
-
-function Worker(firstname, lastname, employeeId){
-	Contacts.Person.call(this, firstname, lastname);
-	this.__employeeId = employeeId;
+function Manager(firstname, lastname, employeeId){
+    Employee.apply(this, arguments);
 }
-Worker.prototype = {
-	__proto__ : Contacts.Person.prototype,
+Manager.prototype = {
+	__proto__ : Employee.prototype,
 
-	getEmployeeId : function(){
-		return this.__employeeId;
+	get position(){
+
 	}
 }
