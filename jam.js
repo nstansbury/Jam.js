@@ -208,31 +208,36 @@ var Jam = {
 		return context;
 	},
 	
-	/** @description Import the specified modules asynchrously into the Namespace. */
+	/** @description Import the specified modules asynchronously into the Namespace. */
 	/** @param {String|String[]} namespace */
 	/** @param {String|String[]} [module] Fully qualified path to JavaScript file to import */
 	/** @param {Function} [onImportHandler] */
 	/** @returns {void} */
 	imports : function(namespace, module, onImportHandler){
+        if(typeof module == "function"){
+            onImportHandler = module;
+        }
 		if(Array.isArray(namespace)){
-			if(typeof module !== "undefined" || "function"){		// Oh for multiple function signatures!
-				throw "Modules cannot be specified with multiple Namespaces";
-			}
-			onImportHandler = module;
+            if(typeof module !== "undefined" && typeof module !== "function"){		// Oh for multiple function signatures!
+                throw "Modules cannot be specified with multiple Namespaces";
+            }
+            this._importsWithNamespaceArray(namespace, onImportHandler);
+			return;
 		}
-		else if(Array.isArray(module)){ 
+		else if(Array.isArray(module)){
 			if(namespace == undefined){
 				throw "Namespace must be specified to import Modules into";
 			}
+            this._importsWithModuleArray(namespace, module, onImportHandler);
+            return;
 		}
 		else if(typeof module != "string"){
-			onImportHandler = module;	// Module is optional param
 			module = this.defaultPath +namespace +Jam.Module.defaultExtn;
             if(this.preventCache){
                 //module += "?" +Math.random();
             }
 		}
-		
+
 		if(Jam.hasNamespace(namespace)){
 			var ns = Jam.getNamespace(namespace);
 		}
@@ -255,7 +260,34 @@ var Jam = {
 		
 		ns.imports(mod, onImportHandler);
 	},
-	
+
+    /** @description Import the specified modules asynchronously into the Namespace. */
+    /** @param {String[]} namespaces */
+    /** @param {Function} [onImportHandler] */
+    /** @returns {void} */
+    _importsWithNamespaceArray : function(namespaces, onImportHandler){
+        if(onImportHandler){
+            onImportHandler = Jam.getGroupCallback(onImportHandler, namespaces.length);
+        }
+        for(var i = 0; i < namespaces.length; i++){
+            this.imports(namespaces[i], null, onImportHandler);
+        }
+    },
+
+    /** @description Import the specified modules asynchronously into the Namespace. */
+    /** @param {String} namespace */
+    /** @param {String[]} modules Fully qualified path to JavaScript file to import */
+    /** @param {Function} [onImportHandler] */
+    /** @returns {void} */
+    _importsWithModuleArray : function(namespace, modules, onImportHandler){
+        if(onImportHandler){
+            onImportHandler = Jam.getGroupCallback(onImportHandler, modules.length);
+        }
+        for(var i = 0; i < modules.length; i++){
+            this.imports(namespaces, modules[i], onImportHandler);
+        }
+    },
+
 	/** @description This function allows us to use the static '__proto__' declaration (or just 'proto' in ES3) declaration for inheritance on Opera & IE
 	/** @param {Object} base */
 	/** @returns {void} */
@@ -794,7 +826,7 @@ Jam.Script.prototype = {
 }
 
 
-/** @description Import the specified modules asynchrously into the Namespace. */
+/** @description Import the specified modules asynchronously into the Namespace. */
 /** @param {String|String[]} namespace */
 /** @param {String|String[]} [module] Fully qualified path to JavaScript file to import */
 /** @param {Function} [onImportHandler] */

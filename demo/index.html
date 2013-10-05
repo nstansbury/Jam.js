@@ -8,7 +8,7 @@
 		<script type="text/javascript">		
 			Jam.onready = function(){		
 				// Import a module into a namespace
-				Jam.imports("Contacts.Suppliers", onimport);
+				Jam.imports(["Contacts.Suppliers", "Contacts.Employees"], onimport);
 				
 				// Load and execute a random JS file
 				Jam.exec("//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js", jQueryLoaded);
@@ -16,10 +16,13 @@
 			
 			function onimport(namespace){
 				console.log("___________Namespace Loaded: " +Contacts.__name__);
+
 				var supplier = new Contacts.Suppliers.Supplier(12345678, "My JavaScript Supplier");
-				
-				console.log(supplier.toString());
-				
+				console.log("Supplier is : " +supplier.toString());
+
+				var manager = new Contacts.Employees.Manager("Bob 'Big'", "Manager", 12345);
+				console.log("Manager is : " +manager.toString());
+
 				// Define a standalone delimited object
 				Jam.define("Contacts.Customers.TheBest");
 				console.log("The 'Contacts.Customers.TheBest' Object has been defined: " +(Contacts.Customers.TheBest != undefined));
