@@ -1,13 +1,13 @@
 "use strict";
 /** @description A JavaScript Asynchronous Module loader */
 /** @author Neil Stansbury <neil@neilstansbury.com> */
-/** @version 1.1 */
 
 
 /** @namespace */
 var Jam = {
+    /** @version 1.2.0 */
 	/** @type {string} */
-	version : "1.1.0",
+	version : "1.2.0",
 	
 	/** @private */
 	_global : this,
