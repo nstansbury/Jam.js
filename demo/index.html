@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-1.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:cal="http://www.w3.org/2002/12/cal/ical#" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ma="http://www.w3.org/ns/ma-ont#" xml:lang="en">
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 	<head>
 		<title>Jam.Js Demo</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<style type="text/css">
+			body {
+				font-size: 12pt;
+			}
+		</style>
 		<script type="text/javascript" src="../jam.js"></script>
 		<script type="text/javascript">		
 			Jam.onready = function(){		
@@ -15,21 +20,21 @@
 			}
 			
 			function onimport(namespace){
-				console.log("___________Namespace Loaded: " +Contacts.__name__);
+				document.write("Jam :: Namespace Loaded: " +Contacts.__name__ +"<br>");
 
 				var supplier = new Contacts.Suppliers.Supplier(12345678, "My JavaScript Supplier");
-				console.log("Supplier is : " +supplier.toString());
+				document.write("Jam :: Supplier is : " +supplier.toString() +"<br>");
 
 				var manager = new Contacts.Employees.Manager("Bob 'Big'", "Manager", 12345);
-				console.log("Manager is : " +manager.toString());
+				document.write("Jam :: Manager is : " +manager.toString() +"<br>");
 
 				// Define a standalone delimited object
 				Jam.define("Contacts.Customers.TheBest");
-				console.log("The 'Contacts.Customers.TheBest' Object has been defined: " +(Contacts.Customers.TheBest != undefined));
+				document.write("Jam :: The 'Contacts.Customers.TheBest' Object should be defined: " +(Contacts.Customers.TheBest != undefined) +"<br>");
 			}
 			
 			function jQueryLoaded(){
-				console.log("jQuery is loaded: " +($ != undefined) +" Version: " +$().jquery)
+				document.write("Jam :: jQuery is loaded: " +($ != undefined) +" Version: " +$().jquery +"<br>")
 			}
 			
 		</script>
