@@ -24,6 +24,6 @@ Manager.prototype = {
 	__proto__ : Employee.prototype,
 
 	get position(){
-
+        return "The Boss";
 	}
 }
