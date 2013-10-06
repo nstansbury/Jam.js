@@ -293,7 +293,7 @@ var Jam = {
 	/** @returns {void} */
 	extend : function(base)	{
 		if(Object.__proto__ != undefined)	{
-			//return;
+			return;
 		}
 		function prototypeObject(superClass, subClass)	{
 			for(var property in superClass)	{
