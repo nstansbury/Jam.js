@@ -7,7 +7,7 @@
 var Jam = {
     /** @version 1.2.1 */
 	/** @type {string} */
-	version : "1.2.0",
+	version : "1.2.1",
 	
 	/** @private */
 	_global : this,
