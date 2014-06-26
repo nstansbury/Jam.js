@@ -657,7 +657,8 @@ Jam.Module.prototype = {
 						try{\
 							context[symbol] = eval(symbol);\
 						}catch(e){\
-							throw "Error Exporting Symbol: `" +symbol +"` from " +context.__name__;\
+							console.error("Error Exporting Symbol: `" +symbol +"` from " +context.__name__);\
+							throw e;\
 						}\
 						Jam.extend(context[symbol]);\
 					}\
@@ -710,11 +711,13 @@ Jam.Module.prototype = {
             }
 
             if(error){
-                if(Jam.Module.hasDependency(module)){
+                if(error instanceof TypeError && Jam.Module.hasDependency(module)){
                     //console.log("_____Jam :: Module Dependency Exception: " +error +"\n" +module.getUrl());
                     return;
                 }
-                throw error
+				module.__status = Jam.ReadyState.ERROR;
+				console.error("Jam Module Import Failed: " +module.getUrl() +" " +error);
+				return;
             }
 
             if(Jam.Module.hasDependency(module)){
