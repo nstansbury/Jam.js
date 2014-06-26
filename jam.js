@@ -5,9 +5,9 @@
 
 /** @namespace */
 var Jam = {
-    /** @version 1.2.0 */
+    /** @version 1.2.2 */
 	/** @type {string} */
-	version : "1.2.0",
+	version : "1.2.2",
 	
 	/** @private */
 	_global : this,
