@@ -608,11 +608,14 @@ Jam.Module.prototype = {
 		if(window.XMLHttpRequest)	{
 			var httpRequest = new XMLHttpRequest();
 		}
-		else if(window.ActiveXObject)	{
+		else if(window.XDomainRequest){
+			var httpRequest = new XDomainRequest();
+		}
+		else if(window.ActiveXObject){
 			var httpRequest = new ActiveXObject("Microsoft.XMLHTTP");
 		}
 		httpRequest.open("get", module.getUrl(), true);
-		httpRequest.onreadystatechange = function() {
+		httpRequest.onreadystatechange = function(){
 			switch(httpRequest.readyState){
 				case 2:
 					break;
