@@ -5,9 +5,9 @@
 
 /** @namespace */
 var Jam = {
-    /** @version 1.2.2 */
+    /** @version 1.2.3 */
 	/** @type {string} */
-	version : "1.2.2",
+	version : "1.2.3",
 	
 	/** @private */
 	_global : this,
@@ -295,6 +295,7 @@ var Jam = {
 		if(Object.__proto__ != undefined)	{
 			return;
 		}
+		console.log("Extending Prototype");
 		function prototypeObject(superClass, subClass)	{
 			for(var property in superClass)	{
 				if(subClass.hasOwnProperty(property) == false)	{	// Has subClass overridden superClass
@@ -398,28 +399,32 @@ var Jam = {
 		}
 		
 		var loadCount = filename.length;
-		var handler = Jam.getGroupCallback(onExecListener, loadCount);
 		
+		var scripts = [];
 		for(var i = 0; i < loadCount; i++)	{
 			var script = Jam.getScript(basepath +filename[i]);
-			if(script)	{
-				if(script.getReadyState() > Jam.ReadyState.EMPTY)	{
-					continue;
+			if(!script)	{
+				script = Jam.addScript(basepath +filename[i]);
+			}
+			scripts.push(script);
+		}
+		
+		function execScript(next) {
+			if(scripts[next]){
+				try {
+					scripts[next].exec(execScript.bind(null, next +1));
+				}
+				catch(e) {
+					if(onExecError)		{
+						onExecError(script, e);
+					}
 				}
 			}
 			else {
-				script = Jam.addScript(basepath +filename[i]);	
+				onExecListener();
 			}
-			try {
-				script.exec(handler);
-			}
-			catch(e)	{
-				if(onExecError)		{
-					onExecError(script, e);
-				}
-			}
-			
 		}
+		execScript(0);
 	},
 	
 	/** @description Combine all the modules and dependancies into a single file */
@@ -716,7 +721,7 @@ Jam.Module.prototype = {
                     return;
                 }
 				module.__status = Jam.ReadyState.ERROR;
-				console.error("Jam Module Import Failed: " +module.getUrl() +" " +error);
+				console.error("Jam Module Import Failed: " +module.getUrl() +" " +error +" Perhaps you have forgotton to import() a dependancy?");
 				return;
             }
 
@@ -804,16 +809,63 @@ Jam.Script.prototype = {
 	/** @param {Function} [onLoadHandler] */
 	/** @returns {void} */
 	load : function(onLoadHandler){
+		var script = this;
 		
-		//var script = this;
-		//script.__isLoaded = true;
+		if(window.XMLHttpRequest)	{
+			var httpRequest = new XMLHttpRequest();
+		}
+		else if(window.XDomainRequest){
+			var httpRequest = new XDomainRequest();
+		}
+		else if(window.ActiveXObject){
+			var httpRequest = new ActiveXObject("Microsoft.XMLHTTP");
+		}
+		httpRequest.open("get", this.getUrl(), true);
+		httpRequest.onreadystatechange = function(){
+			switch(httpRequest.readyState){
+				case 2:
+					break;
+				case 3:
+					script.__status = Jam.ReadyState.STALLED;		// Need a timeout check here
+					break;
+				case 4:
+					if(httpRequest.status != 200){
+						script.__status = Jam.ReadyState.ERROR;
+					}
+					else if(httpRequest.responseText == ""){
+						script.__status = Jam.ReadyState.EMPTY;
+					}
+					else {
+						script.__status = Jam.ReadyState.LOADED;
+						onLoadHandler.call(script);
+					}
+					break;
+			}
+		}
+		httpRequest.send();
+        this.__status = Jam.ReadyState.LOADING;
 	},
 	
 	/** @param {Function} [onExecHandler] */
 	/** @returns {void} */
 	exec : function(onExecHandler){
 		var script = this;
-		function onload()	{
+		function execute(){
+			var elem = script.getElement();
+			if(elem.addEventListener){
+				elem.addEventListener("load", onready, false);
+			}
+			else if(elem.readyState){
+				elem.onreadystatechange = function(){
+					if(elem.readyState == "complete" || elem.readyState == "loaded"){
+						onready();
+					}
+				};
+			}
+			elem.src = script.getUrl();
+		}
+		
+		function onready()	{
 			script.__status = Jam.ReadyState.READY;
 			if(onExecHandler){
 				console.log("Jam :: Script Executed: "+script.getName());
@@ -822,19 +874,17 @@ Jam.Script.prototype = {
 				}, 0);
 			}
 		}
-		var elem = this.getElement();
-		if(elem.addEventListener){
-			elem.addEventListener("load", onload, false);
+		
+		if(this.getReadyState == Jam.ReadyState.LOADING){
+			return;
 		}
-		else if(elem.readyState){
-			elem.onreadystatechange = function(){
-				if(this.readyState == "complete" || this.readyState == "loaded"){
-					onload();
-				}
-			};
+		else if(this.getReadyState == Jam.ReadyState.LOADED){
+			execute();
 		}
-		this.__status = Jam.ReadyState.LOADING;
-		elem.src = this.getUrl();
+		else {
+			this.load(execute);
+			this.__status = Jam.ReadyState.LOADING;	
+		}
 	}
 }
 
@@ -864,3 +914,4 @@ if(Function.prototype.name === undefined && Object.defineProperty !== undefined)
 
 
 Jam.init(window);
+
