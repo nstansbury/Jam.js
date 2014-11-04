@@ -5,9 +5,9 @@
 
 /** @namespace */
 var Jam = {
-    /** @version 1.2.3 */
+    /** @version 1.2.4 */
 	/** @type {string} */
-	version : "1.2.3",
+	version : "1.2.4",
 	
 	/** @private */
 	_global : this,
@@ -412,7 +412,7 @@ var Jam = {
 		function execScript(next) {
 			if(scripts[next]){
 				try {
-					scripts[next].exec(execScript.bind(null, next +1));
+					scripts[next].exec(loadCount > 1 ? true : false, execScript.bind(null, next +1));
 				}
 				catch(e) {
 					if(onExecError)		{
@@ -820,7 +820,7 @@ Jam.Script.prototype = {
 		else if(window.ActiveXObject){
 			var httpRequest = new ActiveXObject("Microsoft.XMLHTTP");
 		}
-		httpRequest.open("get", this.getUrl(), true);
+		httpRequest.open("GET", this.getUrl(), true);
 		httpRequest.onreadystatechange = function(){
 			switch(httpRequest.readyState){
 				case 2:
@@ -846,9 +846,10 @@ Jam.Script.prototype = {
         this.__status = Jam.ReadyState.LOADING;
 	},
 	
+	/** @param {boolean} async This avoids causing needless CORs requests on non-dependant resources */
 	/** @param {Function} [onExecHandler] */
 	/** @returns {void} */
-	exec : function(onExecHandler){
+	exec : function(async, onExecHandler){
 		var script = this;
 		function execute(){
 			var elem = script.getElement();
@@ -878,7 +879,7 @@ Jam.Script.prototype = {
 		if(this.getReadyState == Jam.ReadyState.LOADING){
 			return;
 		}
-		else if(this.getReadyState == Jam.ReadyState.LOADED){
+		else if(this.getReadyState == Jam.ReadyState.LOADED || async == false){
 			execute();
 		}
 		else {
