@@ -8,16 +8,20 @@ A super light weight and easy to use Module and Namespace loader inspired by Moz
 imports("My.Qualified.Namespace");
 ```
 The code in the namespace can now be referenced as a fully encapsulated object via dot notation:
+
 ```var thing = new My.Qualified.Namespace.exportedThing();```
 Alternatively, import the namespace code to a specific object alias:
+
 ```javascript
 var someVar = imports("My.Qualified.Namespace");
 ```
-Or without using the global `imports()` function
+Or without using the global `imports()` function:
+
 ```javascript
 Jam.imports("My.Qualified.Namespace");
 ```
 Or importing specific modules into a namespace with a callback if required:
+
 ```javascript
 Jam.imports("My.Qualified.Namespace", ["module1.jsm", "module2.jsm"], callback);
 ```
