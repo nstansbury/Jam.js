@@ -5,9 +5,9 @@
 
 /** @namespace */
 var Jam = {
-    /** @version 1.2.4 */
+    /** @version 1.2.5 */
 	/** @type {string} */
-	version : "1.2.4",
+	version : "1.2.5",
 	
 	/** @private */
 	_global : this,
@@ -714,32 +714,25 @@ Jam.Module.prototype = {
             catch(e){
                 error = e;
             }
-
+	    if(Jam.Module.hasDependency(module)){
+                //console.log("_____Jam :: Module Dependency:" +module.getUrl());
+                return;
+            }
             if(error){
-                if(error instanceof TypeError && Jam.Module.hasDependency(module)){
-                    //console.log("_____Jam :: Module Dependency Exception: " +error +"\n" +module.getUrl());
-                    return;
-                }
-				module.__status = Jam.ReadyState.ERROR;
-				console.error("Jam Module Import Failed: " +module.getUrl() +" " +error +" Perhaps you have forgotton to import() a dependancy?");
-				return;
+		module.__status = Jam.ReadyState.ERROR;
+		console.error("Jam Module Import Failed: " +module.getUrl() +" " +error +" Perhaps you have forgotton to import() a dependancy?");
+		return;
             }
-
-            if(Jam.Module.hasDependency(module)){
-                module.__status = Jam.ReadyState.STATIC;
-            }
-            else {
-                Jam.Module.endExport(module);
-                if(module.getReadyState() != Jam.ReadyState.READY){
-                    module.__status = Jam.ReadyState.READY;
-                    module.onready();
-                }
+            
+            Jam.Module.endExport(module);
+            if(module.getReadyState() != Jam.ReadyState.READY){
+                module.__status = Jam.ReadyState.READY;
+                module.onready();
             }
             var dep = Jam.Module.getDependency();
             if(dep){
                 dep();
             }
-
         }
 
         //console.log("_____Jam :: Exporting: " +this.getUrl());
