@@ -5,17 +5,33 @@ JavaScript Asynchronous Module Loader
 A super light weight and easy to use Module and Namespace loader inspired by Mozilla's JavaScript code modules: https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules
 
 ```javascript
+imports("My.Qualified.Namespace");
+```
+The code in the namespace can now be referenced as a fully encapsulated object via dot notation:
+
+```var thing = new My.Qualified.Namespace.exportedThing();```
+Alternatively, import the namespace code to a specific object alias:
+
+```javascript
+var someVar = imports("My.Qualified.Namespace");
+```
+Or without using the global `imports()` function:
+
+```javascript
 Jam.imports("My.Qualified.Namespace");
 ```
-Or
+Or importing specific modules into a namespace with a callback if required:
+
 ```javascript
 Jam.imports("My.Qualified.Namespace", ["module1.jsm", "module2.jsm"], callback);
 ```
-Or more simply using the global `imports()` function
-```javascript
-imports("My.Qualified.Namespace");
-```
-It is designed so that unlike other AMD/Module loading mechanisms, no changes to your existing code or your coding style are required, and there is no need to wrap everything in closures, self executing functions or callbacks etc.
+
+It is designed so that unlike other AMD/Module loading mechanisms:
+
+* _No changes to your existing code or your coding style are required._
+* _There is no need to wrap everything in closures, self executing functions or callbacks etc._
+* _Module or namespace file paths references are never hard coded by the importer._
+* _Anything not explicitly exported is always private to that module._
 
 A 'module' is just simply defined as a single file, that by convention has a .jsm extension. Any number of 'modules' can be imported into the same Namespace.  This allows large namespaces to split code out into more traditional class files if required.
 

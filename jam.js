@@ -724,16 +724,16 @@ Jam.Module.prototype = {
             catch(e){
                 error = e;
             }
-            if(Jam.Module.hasDependency(module)){
+	    if(Jam.Module.hasDependency(module)){
                 //console.log("_____Jam :: Module Dependency:" +module.getUrl());
                 return;
             }
             if(error){
-				module.__status = Jam.ReadyState.ERROR;
-				console.error("Jam Module Import Failed: " +module.getUrl() +" " +error +" Perhaps you have forgotton to import() a dependancy?");
-				return;
+		module.__status = Jam.ReadyState.ERROR;
+		console.error("Jam Module Import Failed: " +module.getUrl() +" " +error +" Perhaps you have forgotton to import() a dependancy?");
+		return;
             }
-
+            
             Jam.Module.endExport(module);
             if(module.getReadyState() != Jam.ReadyState.READY){
                 module.__status = Jam.ReadyState.READY;
