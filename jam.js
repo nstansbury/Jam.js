@@ -5,22 +5,25 @@
 
 /** @namespace */
 var Jam = {
-    /** @version 1.2.4 */
+    /** @version 1.2.6 */
 	/** @type {string} */
-	version : "1.2.4",
-	
+	version : "1.2.6",
+
 	/** @private */
 	_global : this,
-	
+
 	/** @private */
 	__namespaces : {},
-	
+
 	/** @private */
 	__modules : {},
-	
+
 	/** @private */
 	__scripts : {},
-	
+
+    /** @type {String} */
+	__baseURL : "",
+
 	/** @type {String} */
 	defaultPath : "",
 
@@ -41,25 +44,24 @@ var Jam = {
 	* http://javascript.nwbox.com/ContentLoaded/MIT-LICENSE
 	*
 	*/
-   
+
 	/** @author iego Perini (diego.perini at gmail.com) Original Code contentLoad.js */
 	/** @param {Window} win DOM Window reference */
 	/** @returns{void} */
 	init : function(win) {
 		var done = false, top = true,
-		
+
 		doc = win.document, root = doc.documentElement,
-		
+
 		add = doc.addEventListener ? 'addEventListener' : 'attachEvent',
 		rem = doc.addEventListener ? 'removeEventListener' : 'detachEvent',
 		pre = doc.addEventListener ? '' : 'on';
-		
+
 		function loaded(){
-			Jam.defaultPath = Jam.getBaseUrl();
 			console.log("JavaScript Asynchronous Module & Namespace Loader v" +Jam.version +" :: Jam is ready...");
 			Jam.onready();
 		}
-		
+
 		function init(e) {
 			if(e.type == 'readystatechange' && doc.readyState != 'complete'){
 				return;
@@ -69,7 +71,7 @@ var Jam = {
 				loaded.call(win, e.type || e);
 			}
 		}
-	
+
 		function poll(){
 			try{
 				root.doScroll('left');
@@ -80,7 +82,7 @@ var Jam = {
 			}
 			init('poll');
 		};
-		
+
 		if(doc.readyState == 'complete'){
 			loaded.call(win, 'lazy');
 		}
@@ -99,15 +101,23 @@ var Jam = {
 			win[add](pre + 'load', init, false);
 		}
 	},
-	
+
 	/** @returns {String} */
 	getBaseUrl : function()	{
-		// We should check for <head><base/></head> element
-		var fileparts = window.location.href.split("/");
-		fileparts.pop();
-		return fileparts.join("/") +"/";
+        if(this.__baseURL === ''){
+            var base = document.querySelector('head > base');
+            if(base && base.href != ''){
+                this.__baseURL = base.href;
+            }
+            else {
+                var fileparts = window.location.href.split("/");
+        		fileparts.pop();
+        		this.__baseURL = fileparts.join("/") +"/";
+            }
+        }
+        return this.__baseURL;
 	},
-	
+
 	/** @param {Function} callback */
 	/** @param {Number} groupcount */
 	/** @returns {Function} */
@@ -123,19 +133,19 @@ var Jam = {
 			}
 		}
 	},
-	
+
 	/** @param {String} url */
 	/** @returns {Boolean} */
 	hasModule : function(url){
 		return this.__modules[url] != undefined ? true : false;
 	},
-	
+
 	/** @param {String} url */
 	/** @returns {Jam.Module} */
 	getModule : function(url){
 		return this.__modules[url] || null;
 	},
-	
+
 	/** @param {String} url */
 	/** @returns {Jam.Module} */
 	addModule : function(url){
@@ -143,19 +153,19 @@ var Jam = {
 		this.__modules[url] = Mod;
 		return Mod;
 	},
-	
+
 	/** @param {String} namespace */
 	/** @returns {Boolean} */
 	hasNamespace : function(namespace){
 		return this.__namespaces[namespace] != undefined ? true : false;
 	},
-	
+
 	/** @param {String} namespace */
 	/** @returns {Jam.Namespace} */
 	getNamespace : function(namespace){
 		return this.__namespaces[namespace] || null;
 	},
-	
+
 	/** @param {String} namespace */
 	/** @returns {Jam.Namespace} */
 	addNamespace : function(namespace){
@@ -164,19 +174,19 @@ var Jam = {
 		return Ns;
 	},
 	dropNamespace : function(){throw "Not Yet Implemented";},
-	
+
 	/** @param {String} url */
 	/** @returns {Boolean} */
 	hasScript : function(url){
 		return this.__scripts[url] != undefined ? true : false;
 	},
-	
+
 	/** @param {String} url */
 	/** @returns {Jam.Script} */
 	getScript : function(url)	{
 		return this.__scripts[url] || null;
 	},
-	
+
 	/** @param {String} url */
 	/** @returns {Jam.Script} */
 	addScript : function(url)	{
@@ -186,10 +196,10 @@ var Jam = {
 		this.__scripts[url] = script;
 		return script;
 	},
-	
+
 	/** @returns {void} */
 	onready : function(){},
-	
+
 	/** @description Define the named object context and return it */
 	/** @param {String} name */
 	/** @returns {Object} */
@@ -207,7 +217,7 @@ var Jam = {
 		context .__name__ = name;	// Ala Python
 		return context;
 	},
-	
+
 	/** @description Import the specified modules asynchronously into the Namespace. */
 	/** @param {String|String[]} namespace */
 	/** @param {String|String[]} [module] Fully qualified path to JavaScript file to import */
@@ -232,7 +242,7 @@ var Jam = {
             return;
 		}
 		else if(typeof module != "string"){
-			module = this.defaultPath +namespace +Jam.Module.defaultExtn;
+			module = Jam.getBaseUrl() +this.defaultPath +namespace +Jam.Module.defaultExtn;
             if(this.preventCache){
                 //module += "?" +Math.random();
             }
@@ -244,7 +254,7 @@ var Jam = {
 		else {
 			var ns = Jam.addNamespace(namespace);
 		}
-		
+
 		if(Jam.hasModule(module)){
 			var mod = Jam.getModule(module);
 			if(ns.hasModule(mod)){
@@ -257,7 +267,7 @@ var Jam = {
 		else {
 			var mod = Jam.addModule(module);
 		}
-		
+
 		ns.imports(mod, onImportHandler);
 	},
 
@@ -322,7 +332,7 @@ var Jam = {
             }
         }
 	},
-	
+
 	/** @description Load the specified scripts asynchronously without executing them */
 	/** @param {Array|String} filename */
 	/** @param {String} [basepath] */
@@ -339,10 +349,10 @@ var Jam = {
 		if(basepath == undefined)	{
 			basepath = this.getBaseUrl();
 		}
-		
+
 		var loadCount = filename.length;
 		var handler = Jam.getGroupCallback(onLoadListener, loadCount);
-		
+
 		for(var i = 0; i < loadCount; i++)	{
 			if(this.hasScript(url)){
 				var script = this.getScript(url);
@@ -355,7 +365,7 @@ var Jam = {
 			}
 		}
 	},
-	
+
 	/** @description Execute the specified scripts in the order specified */
 	/** @param {Array|String} filename */
 	/** @param {String} [basepath] */
@@ -370,7 +380,7 @@ var Jam = {
 			onExecListener = basepath;
 			basepath = null;
 		}
-		
+
 		if(typeof(filename) == "string")	{
 			var fileparts = filename.split("/");
 			if(fileparts.length > 1)	{
@@ -385,7 +395,7 @@ var Jam = {
 				else {
 					basepath = (basepath == null) ? this.getBaseUrl() + path : basepath + path;
 				}
-				
+
 			}
 			else {
 				filename = [filename];
@@ -397,9 +407,9 @@ var Jam = {
 		else {
 			basepath = (basepath == null) ? "" : basepath;
 		}
-		
+
 		var loadCount = filename.length;
-		
+
 		var scripts = [];
 		for(var i = 0; i < loadCount; i++)	{
 			var script = Jam.getScript(basepath +filename[i]);
@@ -408,7 +418,7 @@ var Jam = {
 			}
 			scripts.push(script);
 		}
-		
+
 		function execScript(next) {
 			if(scripts[next]){
 				try {
@@ -426,7 +436,7 @@ var Jam = {
 		}
 		execScript(0);
 	},
-	
+
 	/** @description Combine all the modules and dependancies into a single file */
 	/** @param {Array|String} modules */
 	/** @returns {String} */
@@ -441,18 +451,18 @@ Jam.Namespace = function(namespace){
 	this.__name = namespace;
 }
 Jam.Namespace.prototype = {
-	
+
 	/** @private */
 	__modules : {},
-	
+
 	/** @private */
 	__listeners : {},
-	
+
 	/** @returns {String} */
 	getName : function(){
 		return this.__name;
 	},
-	
+
 	/** @returns {Object} */
 	getContext : function(){
 		if(this.__context == undefined){
@@ -460,13 +470,13 @@ Jam.Namespace.prototype = {
 		}
 		return this.__context;
 	},
-	
+
 	/** @param {Jam.Module} module */
 	/** @returns {Boolean} */
 	hasModule : function(module){
 		return this.__modules[module.getUrl()] ? true : false;
 	},
-	
+
 	/** @param {Jam.Module} module */
 	/** @param {Function} listener */
 	/** @returns {void} */
@@ -590,16 +600,16 @@ Jam.Module.endExport = function(module){
 Jam.Module.prototype = {
 	/** @private */
     __scope : function(){},
-	
+
 	/** @private */
 	/** @type {Jam.ReadyState} */
 	__status : Jam.ReadyState.EMPTY,
-	
+
 	/** @returns {String} */
 	getUrl : function(){
 		return this.__url
 	},
-	
+
 	/** @returns {Jam.ReadyState} */
 	getReadyState : function(){
 		return this.__status;
@@ -645,7 +655,7 @@ Jam.Module.prototype = {
 		httpRequest.send();
         this.__status = Jam.ReadyState.LOADING;
 	},
-	
+
 	/** @param {String} src */
 	/** @returns {void} */
 	imports : function(src){
@@ -714,32 +724,25 @@ Jam.Module.prototype = {
             catch(e){
                 error = e;
             }
-
+            if(Jam.Module.hasDependency(module)){
+                //console.log("_____Jam :: Module Dependency:" +module.getUrl());
+                return;
+            }
             if(error){
-                if(error instanceof TypeError && Jam.Module.hasDependency(module)){
-                    //console.log("_____Jam :: Module Dependency Exception: " +error +"\n" +module.getUrl());
-                    return;
-                }
 				module.__status = Jam.ReadyState.ERROR;
 				console.error("Jam Module Import Failed: " +module.getUrl() +" " +error +" Perhaps you have forgotton to import() a dependancy?");
 				return;
             }
 
-            if(Jam.Module.hasDependency(module)){
-                module.__status = Jam.ReadyState.STATIC;
-            }
-            else {
-                Jam.Module.endExport(module);
-                if(module.getReadyState() != Jam.ReadyState.READY){
-                    module.__status = Jam.ReadyState.READY;
-                    module.onready();
-                }
+            Jam.Module.endExport(module);
+            if(module.getReadyState() != Jam.ReadyState.READY){
+                module.__status = Jam.ReadyState.READY;
+                module.onready();
             }
             var dep = Jam.Module.getDependency();
             if(dep){
                 dep();
             }
-
         }
 
         //console.log("_____Jam :: Exporting: " +this.getUrl());
@@ -773,44 +776,44 @@ Jam.Script = function(url, type)	{
 }
 Jam.Script.prototype = {
 	//__head : document.getElementsByTagName("head")[0],
-	
+
 	/** @returns {String} */
 	getElement : function()	{
 		return this.__script;
 	},
-	
+
 	/** @returns {String} */
 	getPath : function()	{
 		var delim = this.__url.lastIndexOf("/");
 		return this.__url.slice(0, delim);
 	},
-	
+
 	/** @returns {String} */
 	getUrl : function(){
 		return this.__url;
 	},
-	
+
 	/** @returns {String} */
 	getName : function(){
 		var delim = this.__url.lastIndexOf("/");
 		return this.__url.slice(delim+1);
 	},
-	
+
 	/** @returns {Number} */
 	getSize : function(){
 		return this.__size;
 	},
-	
+
 	/** @returns {Jam.ReadyState} */
 	getReadyState : function(){
 		return this.__status;
 	},
-	
+
 	/** @param {Function} [onLoadHandler] */
 	/** @returns {void} */
 	load : function(onLoadHandler){
 		var script = this;
-		
+
 		if(window.XMLHttpRequest)	{
 			var httpRequest = new XMLHttpRequest();
 		}
@@ -845,7 +848,7 @@ Jam.Script.prototype = {
 		httpRequest.send();
         this.__status = Jam.ReadyState.LOADING;
 	},
-	
+
 	/** @param {boolean} async This avoids causing needless CORs requests on non-dependant resources */
 	/** @param {Function} [onExecHandler] */
 	/** @returns {void} */
@@ -865,7 +868,7 @@ Jam.Script.prototype = {
 			}
 			elem.src = script.getUrl();
 		}
-		
+
 		function onready()	{
 			script.__status = Jam.ReadyState.READY;
 			if(onExecHandler){
@@ -875,7 +878,7 @@ Jam.Script.prototype = {
 				}, 0);
 			}
 		}
-		
+
 		if(this.getReadyState == Jam.ReadyState.LOADING){
 			return;
 		}
@@ -884,7 +887,7 @@ Jam.Script.prototype = {
 		}
 		else {
 			this.load(execute);
-			this.__status = Jam.ReadyState.LOADING;	
+			this.__status = Jam.ReadyState.LOADING;
 		}
 	}
 }
@@ -915,4 +918,3 @@ if(Function.prototype.name === undefined && Object.defineProperty !== undefined)
 
 
 Jam.init(window);
-
